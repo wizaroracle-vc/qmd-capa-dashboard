@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { LogOut, ShieldCheck } from "lucide-react";
 import { signOutAction } from "@/app/login/actions";
@@ -50,7 +51,14 @@ export function AppShell({
             flexShrink: 0,
           }}
         >
-          <span className="capa-tag">CAPA</span>
+          <Image
+            src="/LOGO1.png"
+            alt="CAPA"
+            width={34}
+            height={34}
+            priority
+            style={{ height: "auto", borderRadius: 6 }}
+          />
           <span
             className="disp"
             style={{
@@ -60,7 +68,7 @@ export function AppShell({
               whiteSpace: "nowrap",
             }}
           >
-            Management System
+            CAPA Management System
           </span>
         </Link>
 

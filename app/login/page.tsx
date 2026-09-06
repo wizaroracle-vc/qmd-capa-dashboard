@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getSessionUser, homePathFor } from "@/lib/auth";
 import { LoginForm } from "./login-form";
@@ -12,13 +13,21 @@ export default async function LoginPage() {
         style={{
           minHeight: "100vh",
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           justifyContent: "center",
-          padding: 20,
+          padding: "5vh 20px 40px",
         }}
       >
         <div style={{ width: "100%", maxWidth: 460 }}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <Image
+              src="/LOGO1.png"
+              alt="CAPA"
+              width={160}
+              height={160}
+              priority
+              style={{ margin: "0 auto 16px", height: "auto" }}
+            />
             <div className="capa-tag" style={{ marginBottom: 16 }}>
               QMS · CORRECTIVE &amp; PREVENTIVE ACTION
             </div>
