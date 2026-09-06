@@ -1,0 +1,13 @@
+{
+  "name": "capa-system",
+  "version": "1.0.0",
+  "description": "This is a static, framework-build-free version of the CAPA Management System. It's just two files — `index.html` and `app.js` — so it can be hosted on **any** static web host with no build step, no Node install, and no server required.",
+  "main": "app.js",
+  "scripts": {
+    "start": "python3 -m http.server 8084",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

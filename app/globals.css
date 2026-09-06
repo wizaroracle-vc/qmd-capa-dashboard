@@ -1,26 +1,165 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   Design tokens — ported verbatim from the original app's GlobalStyle
+   (legacy: _legacy/app.js). Fonts are now loaded via next/font in layout.tsx
+   and exposed as --font-* variables.
+--------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-alt: #eef2f6;
+  --ink: #16212c;
+  --ink-muted: #5d6e7e;
+  --ink-faint: #93a1af;
+  --border: #dce3ea;
+  --navy: #1b3a5c;
+  --navy-deep: #0f2740;
+  --steel: #3b7cb4;
+  --steel-soft: #e4eff7;
+  --rose: #c5405a;
+  --rose-soft: #fbe7eb;
+  --gold: #d9a02a;
+  --gold-soft: #fbf1da;
+  --green: #1e8e52;
+  --green-soft: #e4f5ec;
+  --orange: #d9791f;
+  --orange-soft: #fbeede;
+  --purple: #7a5cc0;
+  --purple-soft: #f0ebfa;
+  --red: #cc3b3b;
+  --red-soft: #fbe4e4;
+  --slate-soft: #edf0f4;
 }
 
+/* Make the tokens available to Tailwind utilities too (e.g. bg-navy, text-rose). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-border: var(--border);
+  --color-navy: var(--navy);
+  --color-navy-deep: var(--navy-deep);
+  --color-steel: var(--steel);
+  --color-steel-soft: var(--steel-soft);
+  --color-rose: var(--rose);
+  --color-rose-soft: var(--rose-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-green: var(--green);
+  --color-green-soft: var(--green-soft);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
+  --color-purple: var(--purple);
+  --color-purple-soft: var(--purple-soft);
+  --color-red: var(--red);
+  --color-red-soft: var(--red-soft);
+  --color-slate-soft: var(--slate-soft);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.capa-root {
+  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  min-height: 100vh;
+  width: 100%;
+}
+.capa-root ::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.capa-root ::-webkit-scrollbar-thumb {
+  background: #c6d0da;
+  border-radius: 8px;
+}
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.disp {
+  font-family: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+}
+.mono {
+  font-family: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace;
+  letter-spacing: 0.02em;
+}
+.capa-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ibm-plex-mono), "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border: 1px solid var(--navy);
+  border-radius: 4px;
+  color: var(--navy);
+  background: #fff;
+  position: relative;
+}
+.capa-tag::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid var(--navy);
+  border-left: 2px solid var(--navy);
+}
+.capa-tag::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 2px solid var(--navy);
+  border-right: 2px solid var(--navy);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .capa-root {
+    background: #fff !important;
+  }
+  .print-page {
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

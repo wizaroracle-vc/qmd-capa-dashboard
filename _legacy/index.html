@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CAPA Management System</title>
+<meta name="description" content="Corrective &amp; Preventive Action (CAPA) management system — Locale &gt; Month &gt; Department &gt; CAPA Plan &gt; CAPA Sets, with QMD verification." />
+<style>
+  html, body, #root { height: 100%; margin: 0; padding: 0; }
+  body { background: #F4F6F9; }
+  #boot-fallback {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: system-ui, sans-serif; color: #5D6E7E; font-size: 14px; text-align: center; padding: 24px;
+  }
+</style>
+
+<!--
+  Import map: resolves the bare specifiers used inside app.js (react,
+  react-dom, lucide-react, recharts, etc.) to ESM builds served by esm.sh.
+  ?external=react,react-dom forces those packages to use the SAME React
+  instance loaded below, instead of bundling their own copy — required to
+  avoid "invalid hook call" errors from a duplicate React runtime.
+-->
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.383.0?external=react,react-dom",
+    "recharts": "https://esm.sh/recharts@2.12.7?external=react,react-dom"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="root">
+    <div id="boot-fallback">Loading CAPA Management System…</div>
+  </div>
+
+  <!-- App bundle (compiled from JSX ahead of time; no build step needed to host this). -->
+  <script type="module" src="./app.js"></script>
+
+  <!-- If the module fails to load (e.g. no internet access for the CDN
+       dependencies above), let the visitor know instead of a blank page. -->
+  <script>
+    window.addEventListener('error', function (e) {
+      if (e && e.target && e.target.tagName === 'SCRIPT') {
+        var el = document.getElementById('boot-fallback');
+        if (el) el.textContent = 'Could not load required scripts. Please check your internet connection and reload.';
+      }
+    }, true);
+  </script>
+</body>
+</html>
