@@ -303,6 +303,7 @@ export function QmdDashboard({ data }: { data: AppData }) {
   const [query, setQuery] = useState("");
   const [localeFilter, setLocaleFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [verifLocale, setVerifLocale] = useState("All");
 
   const monthById = useMemo(
     () => new Map(data.months.map((m) => [m.id, m.label])),
@@ -330,9 +331,20 @@ export function QmdDashboard({ data }: { data: AppData }) {
   }, [enriched]);
 
   const totals = countByStatus(enriched);
-  const forVerification = enriched.filter(
-    (p) => p._status === "For QMD Verification",
-  );
+  // Most recent on top, matching the branch dashboard: by date posted
+  // (`dateCreated`), then `updatedAt` (the submit timestamp) to break same-day
+  // ties — not the day-resolution `submittedDate` field.
+  const forVerification = enriched
+    .filter((p) => p._status === "For QMD Verification")
+    .sort(
+      (a, b) =>
+        b.dateCreated.localeCompare(a.dateCreated) ||
+        (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
+    );
+  const forVerificationShown =
+    verifLocale === "All"
+      ? forVerification
+      : forVerification.filter((p) => p.localeId === verifLocale);
   const effective = enriched.filter((p) => p._status === "Effective");
   const partial = enriched.filter((p) => p._status === "Partially Effective");
   const notEffective = enriched.filter((p) => p._status === "Not Effective");
@@ -557,26 +569,41 @@ export function QmdDashboard({ data }: { data: AppData }) {
       {tab === "verification" && (
         <Card style={{ padding: 0, overflow: "hidden" }}>
           <div
-            className="disp"
             style={{
-              padding: "16px 18px",
+              padding: "14px 18px",
               borderBottom: "1px solid var(--border)",
               background: "var(--gold-soft)",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
             }}
           >
-            <span style={{ fontWeight: 700, fontSize: 16 }}>
+            <span className="disp" style={{ fontWeight: 700, fontSize: 16 }}>
               CAPAs for Verification
             </span>
             <span
               style={{
-                marginLeft: 10,
                 fontSize: 12.5,
                 fontWeight: 600,
                 color: "var(--gold)",
               }}
             >
-              {forVerification.length} awaiting QMD review
+              {forVerificationShown.length} awaiting QMD review
+              {verifLocale !== "All" ? ` in ${verifLocale}` : ""}
             </span>
+            <Select
+              value={verifLocale}
+              onChange={(e) => setVerifLocale(e.target.value)}
+              style={{ width: 150, marginLeft: "auto" }}
+            >
+              <option value="All">All locales</option>
+              {data.locales.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.id}
+                </option>
+              ))}
+            </Select>
           </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
@@ -600,7 +627,7 @@ export function QmdDashboard({ data }: { data: AppData }) {
                 </tr>
               </thead>
               <tbody>
-                {forVerification.map((p) => (
+                {forVerificationShown.map((p) => (
                   <tr key={p.id} style={{ borderTop: "1px solid var(--border)" }}>
                     <td style={td}>
                       <span className="mono" style={{ fontWeight: 700, fontSize: 12.5 }}>
@@ -625,13 +652,15 @@ export function QmdDashboard({ data }: { data: AppData }) {
                     </td>
                   </tr>
                 ))}
-                {forVerification.length === 0 && (
+                {forVerificationShown.length === 0 && (
                   <tr>
                     <td
                       colSpan={9}
                       style={{ padding: 20, textAlign: "center", color: "var(--ink-faint)" }}
                     >
-                      Nothing awaiting verification right now.
+                      {verifLocale === "All"
+                        ? "Nothing awaiting verification right now."
+                        : `Nothing awaiting verification in ${verifLocale}.`}
                     </td>
                   </tr>
                 )}

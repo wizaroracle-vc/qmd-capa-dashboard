@@ -147,6 +147,11 @@ body {
 }
 
 @media print {
+  /* Landscape gives the fishbone diagram + wide tables room to print uncut. */
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
   .no-print {
     display: none !important;
   }
@@ -157,6 +162,10 @@ body {
     box-shadow: none !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+  /* Overrides the inline screen zoom so the diagram fits the printed page. */
+  .fishbone-fit {
+    zoom: 0.72 !important;
   }
   body {
     -webkit-print-color-adjust: exact;

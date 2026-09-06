@@ -7,19 +7,68 @@ import {
   fmtDate,
   planStatus,
 } from "@/lib/capa-logic";
-import type { CapaPlan } from "@/lib/capa-types";
+import type { CapaPlan, CapaSet, Category } from "@/lib/capa-types";
 import { FishboneStage } from "@/components/workflow/fishbone-stage";
 import { StatusBadge } from "./status-badge";
+
+/** One 6M category box — label + its causes. */
+function sixMCard(set: CapaSet, c: Category) {
+  const items = set.sixM[c].filter((x) => x.text);
+  return (
+    <div
+      key={c}
+      style={{
+        border: "1px solid var(--border)",
+        borderRadius: 6,
+        padding: 8,
+        fontSize: 12,
+      }}
+    >
+      <div
+        style={{
+          fontWeight: 700,
+          fontSize: 10,
+          letterSpacing: "0.04em",
+          color: "var(--ink-muted)",
+          textTransform: "uppercase",
+          marginBottom: 4,
+        }}
+      >
+        {CATEGORY_LABELS[c]}
+      </div>
+      {items.length === 0 ? (
+        <div style={{ color: "var(--ink-faint)" }}>—</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {items.map((x, i) => (
+            <div
+              key={x.id}
+              style={{ display: "flex", gap: 5, lineHeight: 1.4 }}
+            >
+              <span style={{ color: "var(--ink-faint)", flexShrink: 0 }}>
+                {i + 1}.
+              </span>
+              <span>{x.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** One numbered step block inside a CAPA set — consistent header + indent. */
 function Step({
   n,
   title,
   children,
+  flush,
 }: {
   n: number;
   title: string;
   children: ReactNode;
+  /** Drop the 30px body indent — for wide content like the fishbone. */
+  flush?: boolean;
 }) {
   return (
     <div style={{ marginBottom: 14, breakInside: "avoid" }}>
@@ -58,7 +107,7 @@ function Step({
           {title}
         </span>
       </div>
-      <div style={{ paddingLeft: 30 }}>{children}</div>
+      <div style={{ paddingLeft: flush ? 0 : 30 }}>{children}</div>
     </div>
   );
 }
@@ -143,7 +192,6 @@ export function CapaReport({
           key={s.id}
           style={{
             marginBottom: 28,
-            breakInside: "avoid",
             border: "1px solid var(--border)",
             borderRadius: 12,
             overflow: "hidden",
@@ -189,44 +237,9 @@ export function CapaReport({
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr 1fr",
                   gap: 8,
-                  fontSize: 12.5,
                 }}
               >
-                {CATEGORIES.map((c) => {
-                  const items = s.sixM[c].filter((x) => x.text);
-                  return (
-                    <div
-                      key={c}
-                      style={{
-                        border: "1px solid var(--border)",
-                        borderRadius: 6,
-                        padding: 8,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          fontSize: 10.5,
-                          letterSpacing: "0.04em",
-                          color: "var(--ink-muted)",
-                          textTransform: "uppercase",
-                          marginBottom: 3,
-                        }}
-                      >
-                        {CATEGORY_LABELS[c]}
-                      </div>
-                      {items.length === 0 ? (
-                        <div style={{ color: "var(--ink-faint)" }}>—</div>
-                      ) : (
-                        items.map((x, i) => (
-                          <div key={x.id} style={{ lineHeight: 1.4 }}>
-                            {i + 1}. {x.text}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  );
-                })}
+                {CATEGORIES.map((c) => sixMCard(s, c))}
               </div>
             </Step>
 
@@ -243,19 +256,27 @@ export function CapaReport({
                 {s.vitalCauses.filter((v) => v.text).length === 0 ? (
                   "—"
                 ) : (
-                  <ol style={{ margin: 0, paddingLeft: 18 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                     {s.vitalCauses
                       .filter((v) => v.text)
-                      .map((v) => (
-                        <li key={v.id}>{v.text}</li>
+                      .map((v, i) => (
+                        <div
+                          key={v.id}
+                          style={{ display: "flex", gap: 6, lineHeight: 1.4 }}
+                        >
+                          <span style={{ fontWeight: 700, flexShrink: 0 }}>
+                            {i + 1}.
+                          </span>
+                          <span>{v.text}</span>
+                        </div>
                       ))}
-                  </ol>
+                  </div>
                 )}
               </div>
             </Step>
 
-            <Step n={4} title="Fishbone Diagram">
-              <FishboneStage set={s} hideHeader />
+            <Step n={4} title="Fishbone Diagram" flush>
+              <FishboneStage set={s} hideHeader fit />
             </Step>
 
             <Step n={5} title="5 Whys Analysis">

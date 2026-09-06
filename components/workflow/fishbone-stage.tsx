@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Card, Modal } from "@/components/ui";
 import { CATEGORY_LABELS } from "@/lib/capa-logic";
 import type { CapaSet, Category, Cause } from "@/lib/capa-types";
@@ -96,10 +96,13 @@ const botAttach: [number, Category][] = [
 export function FishboneStage({
   set,
   hideHeader = false,
+  fit = false,
 }: {
   set: CapaSet;
   /** In the report the step already has its own numbered header. */
   hideHeader?: boolean;
+  /** Scale the whole 1160px diagram down to fit a narrow column (report/print). */
+  fit?: boolean;
 }) {
   const [expanded, setExpanded] = useState<{ t: string; c: string } | null>(null);
 
@@ -119,7 +122,12 @@ export function FishboneStage({
           </div>
         </>
       )}
-      <div className="hide-scrollbar" style={{ overflowX: "auto" }}>
+      <div
+        className={fit ? "fishbone-fit" : "hide-scrollbar"}
+        style={
+          fit ? ({ zoom: 0.78 } as CSSProperties) : { overflowX: "auto" }
+        }
+      >
         <div style={{ position: "relative", width: W, minHeight: H, margin: "0 auto" }}>
           <svg
             width={W}
