@@ -27,7 +27,7 @@ export default async function CapaReportPage({
         }}
       >
         <Link
-          href={`/capa/${plan.capaId}`}
+          href={`/capa/${plan.capaId}?stage=summary`}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -37,7 +37,7 @@ export default async function CapaReportPage({
             textDecoration: "none",
           }}
         >
-          <ArrowLeft size={14} /> Back
+          <ArrowLeft size={14} /> Back to summary
         </Link>
         <PrintButtons />
       </div>

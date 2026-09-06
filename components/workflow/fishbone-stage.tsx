@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Card, Modal } from "@/components/ui";
 import { CATEGORY_LABELS } from "@/lib/capa-logic";
 import type { CapaSet, Category, Cause } from "@/lib/capa-types";
@@ -22,7 +22,7 @@ function BoneList({
         className="disp"
         style={{
           fontWeight: 700,
-          fontSize: 12,
+          fontSize: 14,
           color: "var(--navy-deep)",
           marginBottom: 6,
         }}
@@ -32,7 +32,7 @@ function BoneList({
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {causes.length === 0 && (
           <div
-            style={{ fontSize: 11, color: "var(--ink-faint)", fontStyle: "italic" }}
+            style={{ fontSize: 12, color: "var(--ink-faint)", fontStyle: "italic" }}
           >
             No causes yet
           </div>
@@ -48,8 +48,8 @@ function BoneList({
               background: "#fff",
               border: "1px solid var(--border)",
               borderRadius: 6,
-              padding: "4px 8px",
-              fontSize: 11,
+              padding: "5px 9px",
+              fontSize: 13,
               lineHeight: 1.4,
               cursor: "pointer",
               display: "flex",
@@ -74,7 +74,7 @@ function BoneList({
 }
 
 const W = 1160;
-const H = 560;
+const H = 620;
 const spineY = 250;
 const spineX1 = 70;
 const spineX2 = 760;
@@ -106,6 +106,45 @@ export function FishboneStage({
 }) {
   const [expanded, setExpanded] = useState<{ t: string; c: string } | null>(null);
 
+  // In `fit` mode the 1160px diagram is scaled to whatever width it's given
+  // (near full-size in the wide Summary, fitted on the narrow report route).
+  const fitRef = useRef<HTMLDivElement>(null);
+  const [autoScale, setAutoScale] = useState(0.8);
+  useEffect(() => {
+    if (!fit) return;
+    const el = fitRef.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.clientWidth;
+      if (w > 0) setAutoScale(Math.min(0.95, Number((w / W).toFixed(3))));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fit]);
+
+  // The bone lists are absolutely positioned, so tall categories overflow the
+  // fixed-height canvas and collide with whatever follows (the vital-causes
+  // box). Measure the real content height and grow the canvas to fit.
+  const diagRef = useRef<HTMLDivElement>(null);
+  const [diagH, setDiagH] = useState(H);
+  useEffect(() => {
+    const el = diagRef.current;
+    if (!el) return;
+    const measure = () =>
+      setDiagH((prev) => Math.max(H, el.scrollHeight, prev));
+    measure();
+    const raf = requestAnimationFrame(measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    el.querySelectorAll(":scope > div").forEach((c) => ro.observe(c));
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [set]);
+
   return (
     <Card style={{ padding: 20 }}>
       {!hideHeader && (
@@ -122,13 +161,24 @@ export function FishboneStage({
           </div>
         </>
       )}
-      <div
-        className={fit ? "fishbone-fit" : "hide-scrollbar"}
-        style={
-          fit ? ({ zoom: 0.78 } as CSSProperties) : { overflowX: "auto" }
-        }
-      >
-        <div style={{ position: "relative", width: W, minHeight: H, margin: "0 auto" }}>
+      <div ref={fitRef}>
+        <div
+          className={fit ? "fishbone-fit" : "hide-scrollbar"}
+          style={
+            fit
+              ? ({ zoom: autoScale } as CSSProperties)
+              : { overflowX: "auto" }
+          }
+        >
+          <div
+            ref={diagRef}
+            style={{
+              position: "relative",
+              width: W,
+              minHeight: diagH,
+              margin: "0 auto",
+            }}
+          >
           <svg
             width={W}
             height={H}
@@ -165,7 +215,7 @@ export function FishboneStage({
               >
                 <div
                   style={{
-                    fontSize: 10,
+                    fontSize: 11.5,
                     fontWeight: 700,
                     color: "var(--rose)",
                     textTransform: "uppercase",
@@ -176,14 +226,14 @@ export function FishboneStage({
                 </div>
                 <div
                   style={{
-                    fontSize: 11.5,
+                    fontSize: 13.5,
                     fontWeight: 600,
                     marginTop: 4,
                     color: "var(--navy-deep)",
                     lineHeight: 1.35,
                     overflowWrap: "anywhere",
                     display: "-webkit-box",
-                    WebkitLineClamp: 6,
+                    WebkitLineClamp: 5,
                     WebkitBoxOrient: "vertical",
                     overflow: "hidden",
                   }}
@@ -215,6 +265,7 @@ export function FishboneStage({
               />
             </div>
           ))}
+          </div>
         </div>
       </div>
 

@@ -165,7 +165,7 @@ body {
   }
   /* Overrides the inline screen zoom so the diagram fits the printed page. */
   .fishbone-fit {
-    zoom: 0.72 !important;
+    zoom: 0.76 !important;
   }
   body {
     -webkit-print-color-adjust: exact;

@@ -20,14 +20,14 @@ function sixMCard(set: CapaSet, c: Category) {
       style={{
         border: "1px solid var(--border)",
         borderRadius: 6,
-        padding: 8,
-        fontSize: 12,
+        padding: 9,
+        fontSize: 13.5,
       }}
     >
       <div
         style={{
           fontWeight: 700,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: "0.04em",
           color: "var(--ink-muted)",
           textTransform: "uppercase",
@@ -88,12 +88,12 @@ function Step({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 22,
-            height: 22,
+            width: 24,
+            height: 24,
             borderRadius: 6,
             background: "var(--navy)",
             color: "#fff",
-            fontSize: 11,
+            fontSize: 11.5,
             fontWeight: 700,
             flexShrink: 0,
           }}
@@ -102,7 +102,7 @@ function Step({
         </span>
         <span
           className="disp"
-          style={{ fontWeight: 700, fontSize: 13, color: "var(--navy-deep)" }}
+          style={{ fontWeight: 700, fontSize: 14, color: "var(--navy-deep)" }}
         >
           {title}
         </span>
@@ -144,7 +144,7 @@ export function CapaReport({
         <div className="disp" style={{ fontSize: 26, fontWeight: 700, marginTop: 10 }}>
           {plan.capaId}
         </div>
-        <div style={{ fontSize: 13, color: "var(--ink-muted)" }}>
+        <div style={{ fontSize: 13.5, color: "var(--ink-muted)" }}>
           {plan.localeId} · {monthLabel} · {plan.department}
         </div>
         <div style={{ marginTop: 8 }}>
@@ -158,7 +158,7 @@ export function CapaReport({
           gridTemplateColumns: "1fr 1fr 1fr",
           gap: 14,
           marginBottom: 24,
-          fontSize: 13,
+          fontSize: 13.5,
         }}
       >
         {[
@@ -176,7 +176,7 @@ export function CapaReport({
             <div
               style={{
                 color: "var(--ink-faint)",
-                fontSize: 11,
+                fontSize: 11.5,
                 textTransform: "uppercase",
               }}
             >
@@ -207,10 +207,10 @@ export function CapaReport({
               gap: 10,
             }}
           >
-            <span className="disp" style={{ fontWeight: 700, fontSize: 15 }}>
+            <span className="disp" style={{ fontWeight: 700, fontSize: 16 }}>
               CAPA Set {s.setNumber}
             </span>
-            <span className="mono" style={{ fontSize: 11, opacity: 0.7 }}>
+            <span className="mono" style={{ fontSize: 11.5, opacity: 0.7 }}>
               {s.setCode}
             </span>
           </div>
@@ -222,8 +222,8 @@ export function CapaReport({
                   background: "var(--surface-alt)",
                   borderLeft: "3px solid var(--navy)",
                   borderRadius: 6,
-                  padding: "8px 12px",
-                  fontSize: 13.5,
+                  padding: "9px 13px",
+                  fontSize: 14.5,
                   whiteSpace: "pre-wrap",
                 }}
               >
@@ -249,8 +249,8 @@ export function CapaReport({
                   background: "var(--gold-soft)",
                   border: "1px solid var(--gold)",
                   borderRadius: 6,
-                  padding: "8px 12px",
-                  fontSize: 13,
+                  padding: "9px 13px",
+                  fontSize: 14,
                 }}
               >
                 {s.vitalCauses.filter((v) => v.text).length === 0 ? (
@@ -280,7 +280,7 @@ export function CapaReport({
             </Step>
 
             <Step n={5} title="5 Whys Analysis">
-              <div style={{ fontSize: 13 }}>
+              <div style={{ fontSize: 14 }}>
                 {[1, 2, 3, 4, 5].map((n) => {
                   const key = `why${n}` as keyof typeof s.fiveWhys;
                   return (
@@ -312,7 +312,7 @@ export function CapaReport({
 
             <Step n={6} title="Improvement Action Plan">
               {s.actionItems.length === 0 ? (
-                <div style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>
+                <div style={{ fontSize: 13, color: "var(--ink-faint)" }}>
                   No action items.
                 </div>
               ) : (
@@ -321,7 +321,7 @@ export function CapaReport({
                     style={{
                       width: "100%",
                       borderCollapse: "collapse",
-                      fontSize: 11.5,
+                      fontSize: 12.5,
                       minWidth: 680,
                       border: "1px solid var(--border)",
                     }}
@@ -339,7 +339,7 @@ export function CapaReport({
                           <th
                             key={h}
                             style={{
-                              padding: "5px 7px",
+                              padding: "7px 9px",
                               textAlign: "left",
                               borderBottom: "1px solid var(--border)",
                             }}
@@ -358,12 +358,12 @@ export function CapaReport({
                             background: i % 2 ? "var(--surface-alt)" : "#fff",
                           }}
                         >
-                          <td style={{ padding: "5px 7px" }}>{a.correctiveAction}</td>
-                          <td style={{ padding: "5px 7px" }}>{a.preventiveAction}</td>
-                          <td style={{ padding: "5px 7px" }}>{a.responsiblePerson}</td>
-                          <td style={{ padding: "5px 7px" }}>{fmtDate(a.startedDate)}</td>
-                          <td style={{ padding: "5px 7px" }}>{fmtDate(a.targetDate)}</td>
-                          <td style={{ padding: "5px 7px" }}>{a.verification}</td>
+                          <td style={{ padding: "7px 9px" }}>{a.correctiveAction}</td>
+                          <td style={{ padding: "7px 9px" }}>{a.preventiveAction}</td>
+                          <td style={{ padding: "7px 9px" }}>{a.responsiblePerson}</td>
+                          <td style={{ padding: "7px 9px" }}>{fmtDate(a.startedDate)}</td>
+                          <td style={{ padding: "7px 9px" }}>{fmtDate(a.targetDate)}</td>
+                          <td style={{ padding: "7px 9px" }}>{a.verification}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -376,13 +376,13 @@ export function CapaReport({
       ))}
 
       <div style={{ borderTop: "2px solid var(--navy)", paddingTop: 18, marginTop: 10 }}>
-        <div className="disp" style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>
+        <div className="disp" style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
           QMD Verification
         </div>
         {plan.verification.result ? (
           <div
             style={{
-              fontSize: 13.5,
+              fontSize: 14.5,
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: 8,
@@ -408,7 +408,7 @@ export function CapaReport({
             </div>
           </div>
         ) : (
-          <div style={{ fontSize: 13.5, color: "var(--ink-faint)" }}>
+          <div style={{ fontSize: 14.5, color: "var(--ink-faint)" }}>
             Not yet reviewed by QMD.
           </div>
         )}
