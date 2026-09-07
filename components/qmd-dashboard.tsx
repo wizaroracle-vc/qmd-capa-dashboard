@@ -22,6 +22,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   CircleCheck,
+  Eye,
   FileText,
   KeyRound,
   RefreshCcw,
@@ -524,6 +525,9 @@ export function QmdDashboard({ data }: { data: AppData }) {
   }, [enriched]);
 
   const totals = countByStatus(enriched);
+  const awaitingObservation = enriched.filter(
+    (p) => p._status === "Awaiting Observation",
+  ).length;
   // Most recent on top, matching the branch dashboard: by date posted
   // (`dateCreated`), then `updatedAt` (the submit timestamp) to break same-day
   // ties — not the day-resolution `submittedDate` field.
@@ -559,6 +563,8 @@ export function QmdDashboard({ data }: { data: AppData }) {
   const statusPie = [
     "Open",
     "In Progress",
+    "Awaiting Observation",
+    "Under Observation",
     "For QMD Verification",
     "Overdue",
     "Partially Effective",
@@ -637,23 +643,56 @@ export function QmdDashboard({ data }: { data: AppData }) {
             QMD Overview All Locales
           </div>
         </div>
-        <Link
-          href="/qmd/accounts"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            fontSize: 13,
-            fontWeight: 600,
-            color: "var(--navy)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
-            padding: "8px 12px",
-            textDecoration: "none",
-          }}
-        >
-          <KeyRound size={14} /> Branch accounts
-        </Link>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Link
+            href="/qmd/observation"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--navy)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              padding: "8px 12px",
+              textDecoration: "none",
+            }}
+          >
+            <Eye size={14} /> Observation Panel
+            {awaitingObservation > 0 && (
+              <span
+                style={{
+                  background: "#EEF2FF",
+                  color: "#4338CA",
+                  borderRadius: 999,
+                  padding: "1px 7px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
+                {awaitingObservation}
+              </span>
+            )}
+          </Link>
+          <Link
+            href="/qmd/accounts"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--navy)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              padding: "8px 12px",
+              textDecoration: "none",
+            }}
+          >
+            <KeyRound size={14} /> Branch accounts
+          </Link>
+        </div>
       </div>
 
       <div
@@ -1149,6 +1188,8 @@ export function QmdDashboard({ data }: { data: AppData }) {
                 {[
                   "Open",
                   "In Progress",
+                  "Awaiting Observation",
+                  "Under Observation",
                   "For QMD Verification",
                   "Overdue",
                   "Effective",

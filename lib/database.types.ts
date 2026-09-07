@@ -77,18 +77,39 @@ export interface Database {
           date_created: string;
           source: string;
           prepared_by: string;
-          stage: "draft" | "submitted" | "closed" | "monitoring" | "reopened";
+          stage:
+            | "draft"
+            | "submitted"
+            | "observing"
+            | "closed"
+            | "monitoring"
+            | "reopened";
           submitted_date: string;
           archived: boolean;
           verification: Json;
+          /** Added by migration 0003 (CAPA observation period). */
+          observation_started_date: string;
+          observation_duration_days: number;
+          observation_started_by: string;
           created_at: string;
           updated_at: string;
         };
         Insert: Omit<
           Database["public"]["Tables"]["capa_plans"]["Row"],
-          "id" | "created_at" | "updated_at"
+          | "id"
+          | "created_at"
+          | "updated_at"
+          | "observation_started_date"
+          | "observation_duration_days"
+          | "observation_started_by"
         > &
-          Timestamped & { id?: string };
+          Timestamped & {
+            id?: string;
+            // Migration 0003 columns carry DB defaults — optional on insert.
+            observation_started_date?: string;
+            observation_duration_days?: number;
+            observation_started_by?: string;
+          };
         Update: Partial<
           Database["public"]["Tables"]["capa_plans"]["Insert"]
         >;

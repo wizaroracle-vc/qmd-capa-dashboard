@@ -3,7 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { countByStatus, planProgressPct, planStatus } from "@/lib/capa-logic";
+import {
+  countByStatus,
+  fmtDate,
+  observationDaysRemaining,
+  observationEndDate,
+  planProgressPct,
+  planStatus,
+} from "@/lib/capa-logic";
 import { StatusBadge, statusCardStyle } from "@/components/status-badge";
 import type { CapaPlan } from "@/lib/capa-types";
 
@@ -11,6 +18,8 @@ const STATUS_CARDS: { label: string; key: string; tone: string }[] = [
   { label: "Total", key: "total", tone: "var(--navy)" },
   { label: "Open", key: "Open", tone: "var(--ink-muted)" },
   { label: "In Progress", key: "In Progress", tone: "#B45309" },
+  { label: "Awaiting Observation", key: "Awaiting Observation", tone: "#4338CA" },
+  { label: "Under Observation", key: "Under Observation", tone: "#0F766E" },
   { label: "For QMD Verification", key: "For QMD Verification", tone: "#1D4ED8" },
   { label: "Overdue", key: "Overdue", tone: "var(--red)" },
   { label: "Effective", key: "Effective", tone: "var(--green)" },
@@ -21,12 +30,14 @@ const STATUS_CARDS: { label: string; key: string; tone: string }[] = [
 // List ordering: For QMD Verification and In Progress always come first.
 const RANK: Record<string, number> = {
   "For QMD Verification": 0,
-  "In Progress": 1,
-  Overdue: 2,
-  Open: 3,
-  "Partially Effective": 4,
-  "Not Effective": 5,
-  Effective: 6,
+  "Under Observation": 1,
+  "Awaiting Observation": 2,
+  "In Progress": 3,
+  Overdue: 4,
+  Open: 5,
+  "Partially Effective": 6,
+  "Not Effective": 7,
+  Effective: 8,
 };
 
 const sectionTitle: React.CSSProperties = {
@@ -87,7 +98,7 @@ export function BranchCapaOverview({
           padding: 14,
           marginBottom: 20,
           display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
           gap: 12,
         }}
       >
@@ -248,6 +259,19 @@ export function BranchCapaOverview({
                     {monthLabels[p.monthId] ?? "—"} · {p.department} ·{" "}
                     {planProgressPct(p)}% complete
                   </div>
+                  {status === "Under Observation" && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#0F766E",
+                        fontWeight: 600,
+                        marginTop: 2,
+                      }}
+                    >
+                      Observation ends {fmtDate(observationEndDate(p))} ·{" "}
+                      {observationRemainingText(observationDaysRemaining(p))}
+                    </div>
+                  )}
                 </div>
                 <StatusBadge status={status} size="sm" />
               </Link>
@@ -289,6 +313,14 @@ export function BranchCapaOverview({
       )}
     </div>
   );
+}
+
+function observationRemainingText(n: number | null): string {
+  if (n === null) return "";
+  if (n > 1) return `${n} days left`;
+  if (n === 1) return "1 day left";
+  if (n === 0) return "ends today";
+  return `${Math.abs(n)} day(s) overdue`;
 }
 
 const pagerBtn = (disabled: boolean): React.CSSProperties => ({

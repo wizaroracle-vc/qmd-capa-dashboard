@@ -5,6 +5,7 @@ import {
   CATEGORY_LABELS,
   activeSets,
   fmtDate,
+  observationEndDate,
   planStatus,
 } from "@/lib/capa-logic";
 import type { CapaPlan, CapaSet, Category } from "@/lib/capa-types";
@@ -170,6 +171,14 @@ export function CapaReport({
           ["Source of Finding", plan.source || "—"],
           ["Prepared By", plan.preparedBy || "—"],
           ["Submitted Date", fmtDate(plan.submittedDate)],
+          [
+            "Observation",
+            plan.observationStartedDate
+              ? `${fmtDate(plan.observationStartedDate)} → ${fmtDate(
+                  observationEndDate(plan),
+                )} (${plan.observationDurationDays ?? 90} days)`
+              : "—",
+          ],
           ["Status", status],
           ["No. of CAPA Sets", String(sets.length)],
         ].map(([k, v]) => (

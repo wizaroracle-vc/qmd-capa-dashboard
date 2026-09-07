@@ -6,7 +6,14 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui";
 import { StatusBadge, statusCardStyle } from "@/components/status-badge";
-import { activeSets, planProgressPct, planStatus } from "@/lib/capa-logic";
+import {
+  activeSets,
+  fmtDate,
+  observationDaysRemaining,
+  observationEndDate,
+  planProgressPct,
+  planStatus,
+} from "@/lib/capa-logic";
 import { deleteCapaPlanAction } from "@/lib/capa-actions";
 import type { CapaPlan } from "@/lib/capa-types";
 
@@ -69,6 +76,26 @@ export function PlanCard({ plan }: { plan: CapaPlan }) {
         >
           {activeSets(plan).length} CAPA Set(s) · {planProgressPct(plan)}% complete
         </div>
+        {status === "Under Observation" && (
+          <div
+            style={{
+              fontSize: 11.5,
+              color: "#0F766E",
+              fontWeight: 600,
+              marginTop: 3,
+            }}
+          >
+            Observation ends {fmtDate(observationEndDate(plan))}
+            {(() => {
+              const n = observationDaysRemaining(plan);
+              if (n === null) return "";
+              if (n > 1) return ` · ${n} days left`;
+              if (n === 1) return " · 1 day left";
+              if (n === 0) return " · ends today";
+              return ` · ${Math.abs(n)} day(s) overdue`;
+            })()}
+          </div>
+        )}
       </Link>
 
       {canDelete && (

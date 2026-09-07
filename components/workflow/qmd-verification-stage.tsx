@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CircleCheck, Send } from "lucide-react";
+import Link from "next/link";
+import { CircleCheck, Hourglass, Send, TriangleAlert } from "lucide-react";
 import {
   Btn,
   Card,
@@ -12,6 +13,12 @@ import {
   TextInput,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/status-badge";
+import {
+  fmtDate,
+  isObservationComplete,
+  observationDaysRemaining,
+  observationEndDate,
+} from "@/lib/capa-logic";
 import type { CapaPlan, Verification } from "@/lib/capa-types";
 
 export function QmdVerificationStage({
@@ -26,7 +33,46 @@ export function QmdVerificationStage({
   const [v, setV] = useState<Verification>(plan.verification);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const locked = plan.stage === "closed";
+  const awaitingObservation = plan.stage === "submitted";
+  const earlyVerify =
+    plan.stage === "observing" && !isObservationComplete(plan);
   const canSubmit = !!v.result && v.verifiedBy.trim().length > 0;
+
+  if (awaitingObservation) {
+    return (
+      <Card style={{ padding: 20 }}>
+        <div
+          className="disp"
+          style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}
+        >
+          Effectiveness Verification
+        </div>
+        <div
+          style={{
+            marginTop: 12,
+            background: "#EEF2FF",
+            border: "1px solid #A5B4FC",
+            borderRadius: 8,
+            padding: 14,
+            display: "flex",
+            gap: 10,
+            alignItems: "flex-start",
+            fontSize: 13.5,
+          }}
+        >
+          <Hourglass size={18} color="#4338CA" style={{ flexShrink: 0, marginTop: 1 }} />
+          <div>
+            This CAPA is awaiting an observation window. Start the observation
+            period from the{" "}
+            <Link href="/qmd/observation" style={{ fontWeight: 700 }}>
+              Observation Panel
+            </Link>{" "}
+            before recording a verification.
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   const setField = (k: keyof Verification, val: string) =>
     setV((prev) => ({ ...prev, [k]: val }));
@@ -47,6 +93,37 @@ export function QmdVerificationStage({
         Review the complete CAPA Plan across all sets, then record the verification
         decision.
       </div>
+      {earlyVerify && (
+        <div
+          style={{
+            marginBottom: 16,
+            background: "var(--gold-soft)",
+            border: "1px solid var(--gold)",
+            borderRadius: 8,
+            padding: 12,
+            display: "flex",
+            gap: 10,
+            alignItems: "flex-start",
+            fontSize: 13,
+            color: "var(--navy)",
+          }}
+        >
+          <TriangleAlert
+            size={17}
+            color="var(--gold)"
+            style={{ flexShrink: 0, marginTop: 1 }}
+          />
+          <div>
+            Observation period ends {fmtDate(observationEndDate(plan))}
+            {(() => {
+              const n = observationDaysRemaining(plan);
+              return n && n > 0 ? ` (${n} day(s) left)` : "";
+            })()}
+            . You are verifying early the CAPA has not completed its full
+            monitoring window.
+          </div>
+        </div>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <div>
           <FieldLabel>Verification Date</FieldLabel>

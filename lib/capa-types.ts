@@ -59,6 +59,7 @@ export type Verification = {
 export type PlanStage =
   | "draft"
   | "submitted"
+  | "observing"
   | "closed"
   | "monitoring"
   | "reopened";
@@ -78,6 +79,11 @@ export type CapaPlan = {
   submittedDate: string;
   verification: Verification;
   archived: boolean;
+  /** Observation window (set by QMD from the Observation Panel). Optional so
+      seed-data literals need no change; mapPlan() always fills them. */
+  observationStartedDate?: string;
+  observationDurationDays?: number;
+  observationStartedBy?: string;
   sets: CapaSet[];
   /** ISO timestamp from the DB; used for optimistic-concurrency on save. */
   updatedAt?: string;

@@ -205,15 +205,81 @@ export function planProgressPct(plan: CapaPlan): number {
   return Math.round(avg * 100);
 }
 
+/* ------------------------------ observation ------------------------------ */
+
+export const DEFAULT_OBSERVATION_DAYS = 90;
+
+export const OBSERVATION_PRESETS: { label: string; days: number }[] = [
+  { label: "1 week", days: 7 },
+  { label: "2 weeks", days: 14 },
+  { label: "1 month", days: 30 },
+  { label: "2 months", days: 60 },
+  { label: "3 months", days: 90 },
+  { label: "6 months", days: 180 },
+];
+
+/** Milliseconds per day. */
+const DAY_MS = 86_400_000;
+
+function parseDay(d?: string): number | null {
+  if (!d) return null;
+  const t = new Date(d + "T00:00:00").getTime();
+  return Number.isNaN(t) ? null : t;
+}
+
+export function observationDurationDays(plan: CapaPlan): number {
+  const n = plan.observationDurationDays;
+  return typeof n === "number" && n > 0 ? n : DEFAULT_OBSERVATION_DAYS;
+}
+
+/** Observation end date ("YYYY-MM-DD"), or "" when observation hasn't started. */
+export function observationEndDate(plan: CapaPlan): string {
+  const start = parseDay(plan.observationStartedDate);
+  if (start === null) return "";
+  return new Date(start + observationDurationDays(plan) * DAY_MS)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/** Whole days from today to the observation end date (negative once past),
+    or null when the plan isn't under observation. */
+export function observationDaysRemaining(plan: CapaPlan): number | null {
+  if (plan.stage !== "observing") return null;
+  const end = parseDay(observationEndDate(plan));
+  if (end === null) return null;
+  const now = parseDay(todayStr())!;
+  return Math.ceil((end - now) / DAY_MS);
+}
+
+export function isObservationComplete(plan: CapaPlan): boolean {
+  const remaining = observationDaysRemaining(plan);
+  return remaining !== null && remaining <= 0;
+}
+
+/** Elapsed fraction of the observation window, 0–100. */
+export function observationProgressPct(plan: CapaPlan): number {
+  const start = parseDay(plan.observationStartedDate);
+  if (start === null) return 0;
+  const total = observationDurationDays(plan) * DAY_MS;
+  const elapsed = parseDay(todayStr())! - start;
+  return Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)));
+}
+
 /** stage -> display label. "closed" stage represents an Effective (closed) verification result. */
 export const STAGE_LABEL: Record<string, string> = {
-  submitted: "For QMD Verification",
+  submitted: "Awaiting Observation",
+  observing: "Under Observation",
   closed: "Effective",
   monitoring: "Partially Effective",
   reopened: "Not Effective",
 };
 
 export function planStatus(plan: CapaPlan): string {
+  if (plan.stage === "observing") {
+    return isObservationComplete(plan)
+      ? "For QMD Verification"
+      : "Under Observation";
+  }
   if (plan.stage !== "draft") return STAGE_LABEL[plan.stage] || "Open";
   const sets = activeSets(plan);
   if (sets.length === 0) return "Open";
@@ -343,11 +409,13 @@ export function planRepresentativeIssue(plan: CapaPlan): string {
 export const STATUS_PRIORITY: Record<string, number> = {
   "In Progress": 0,
   "For QMD Verification": 1,
-  Overdue: 2,
-  Open: 3,
-  "Not Effective": 4,
-  "Partially Effective": 5,
-  Effective: 6,
+  "Under Observation": 2,
+  "Awaiting Observation": 3,
+  Overdue: 4,
+  Open: 5,
+  "Not Effective": 6,
+  "Partially Effective": 7,
+  Effective: 8,
 };
 
 export function statusPriority(status: string): number {
@@ -359,6 +427,8 @@ export function countByStatus(plans: CapaPlan[]): Record<string, number> {
     total: plans.length,
     Open: 0,
     "In Progress": 0,
+    "Awaiting Observation": 0,
+    "Under Observation": 0,
     "For QMD Verification": 0,
     Overdue: 0,
     Effective: 0,

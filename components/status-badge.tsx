@@ -3,6 +3,8 @@
 const STATUS_STYLES: Record<string, { bg: string; fg: string; dot: string }> = {
   Open: { bg: "#F1F5F9", fg: "#475569", dot: "#94A3B8" },
   "In Progress": { bg: "#FEF3C7", fg: "#92400E", dot: "#F59E0B" },
+  "Awaiting Observation": { bg: "#EEF2FF", fg: "#4338CA", dot: "#6366F1" },
+  "Under Observation": { bg: "#CCFBF1", fg: "#0F766E", dot: "#14B8A6" },
   "For QMD Verification": { bg: "#DBEAFE", fg: "#1E40AF", dot: "#3B82F6" },
   Overdue: { bg: "var(--red-soft)", fg: "var(--red)", dot: "#CC3B3B" },
   Effective: { bg: "var(--green-soft)", fg: "var(--green)", dot: "#1E8E52" },
@@ -24,6 +26,8 @@ const STATUS_CARD_STYLES: Record<
   Open: { background: "#FFFFFF", borderColor: "#CBD5E1" },
   "In Progress": { background: "#FFFBEB", borderColor: "#FCD34D" },
   Overdue: { background: "#FEF2F2", borderColor: "var(--red)" },
+  "Awaiting Observation": { background: "#EEF2FF", borderColor: "#A5B4FC" },
+  "Under Observation": { background: "#F0FDFA", borderColor: "#5EEAD4" },
   "For QMD Verification": { background: "#EFF6FF", borderColor: "#93C5FD" },
   Effective: { background: "#F0FDF4", borderColor: "var(--green)" },
   "Partially Effective": { background: "#FAF5FF", borderColor: "var(--purple)" },

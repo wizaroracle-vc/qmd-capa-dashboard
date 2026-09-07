@@ -17,6 +17,8 @@ const STATUSES = [
   "Open",
   "In Progress",
   "Overdue",
+  "Awaiting Observation",
+  "Under Observation",
   "For QMD Verification",
   "Effective",
   "Partially Effective",

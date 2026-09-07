@@ -346,6 +346,13 @@ export async function submitVerificationAction(
   const supabase = await createClient();
   const plan = await getPlanByCapaId(capaId);
   if (!plan) return { error: "Plan not found." };
+  if (plan.stage === "draft") return { error: "This CAPA has not been submitted." };
+  if (plan.stage === "submitted") {
+    return {
+      error:
+        "Start the observation period from the Observation Panel before recording a verification.",
+    };
+  }
 
   const { data: updated, error } = await supabase
     .from("capa_plans")
@@ -367,4 +374,143 @@ export async function submitVerificationAction(
   revalidatePath("/qmd");
   revalidatePath(`/locale/${plan.localeId}`);
   return { ok: true };
+}
+
+/* --------------------------------------------------------- observation --- */
+
+const MAX_OBSERVATION_DAYS = 730;
+
+function revalidateObservation(plan: CapaPlan) {
+  revalidatePath("/qmd");
+  revalidatePath("/qmd/observation");
+  revalidatePath(`/capa/${plan.capaId}`);
+  revalidatePath(`/capa/${plan.capaId}/report`);
+  revalidatePath(`/locale/${plan.localeId}`);
+  revalidatePath(`/locale/${plan.localeId}/${plan.year}/${plan.monthNum}`);
+}
+
+function validDuration(days: unknown): number | null {
+  const n = Math.floor(Number(days));
+  if (!Number.isFinite(n) || n < 1 || n > MAX_OBSERVATION_DAYS) return null;
+  return n;
+}
+
+export async function startObservationAction(
+  capaId: string,
+  input: { startedDate: string; durationDays: number; startedBy: string },
+  expectedUpdatedAt: string,
+): Promise<MutationResult> {
+  await requireQmd();
+  const durationDays = validDuration(input.durationDays);
+  if (durationDays === null) {
+    return { error: `Duration must be between 1 and ${MAX_OBSERVATION_DAYS} days.` };
+  }
+  if (!input.startedBy.trim()) return { error: "Enter who is starting the observation." };
+
+  const plan = await getPlanByCapaId(capaId);
+  if (!plan) return { error: "Plan not found." };
+  if (plan.stage !== "submitted") {
+    return { error: "Observation can only be started on a submitted CAPA." };
+  }
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("capa_plans")
+    .update({
+      stage: "observing",
+      observation_started_date: input.startedDate || todayStr(),
+      observation_duration_days: durationDays,
+      observation_started_by: input.startedBy.trim(),
+    })
+    .eq("id", plan.id)
+    .eq("updated_at", expectedUpdatedAt)
+    .select("updated_at")
+    .maybeSingle();
+  if (error) {
+    // 42703 / PGRST204 = column missing; 23514 = stage check constraint rejects
+    // 'observing'. Either way, migration 0003 hasn't been applied.
+    if (
+      error.code === "42703" ||
+      error.code === "PGRST204" ||
+      error.code === "23514"
+    ) {
+      return {
+        error:
+          "Database is missing the CAPA observation columns. Apply the pending migration (supabase db push) and try again.",
+      };
+    }
+    return { error: error.message };
+  }
+  if (!updated) return { conflict: true };
+
+  revalidateObservation(plan);
+  return { ok: true, updatedAt: updated.updated_at as string };
+}
+
+export async function adjustObservationAction(
+  capaId: string,
+  input: { startedDate: string; durationDays: number },
+  expectedUpdatedAt: string,
+): Promise<MutationResult> {
+  await requireQmd();
+  const durationDays = validDuration(input.durationDays);
+  if (durationDays === null) {
+    return { error: `Duration must be between 1 and ${MAX_OBSERVATION_DAYS} days.` };
+  }
+
+  const plan = await getPlanByCapaId(capaId);
+  if (!plan) return { error: "Plan not found." };
+  if (plan.stage !== "observing") {
+    return { error: "This CAPA is not under observation." };
+  }
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("capa_plans")
+    .update({
+      observation_started_date:
+        input.startedDate || plan.observationStartedDate || todayStr(),
+      observation_duration_days: durationDays,
+    })
+    .eq("id", plan.id)
+    .eq("updated_at", expectedUpdatedAt)
+    .select("updated_at")
+    .maybeSingle();
+  if (error) return { error: error.message };
+  if (!updated) return { conflict: true };
+
+  revalidateObservation(plan);
+  return { ok: true, updatedAt: updated.updated_at as string };
+}
+
+export async function cancelObservationAction(
+  capaId: string,
+  expectedUpdatedAt: string,
+): Promise<MutationResult> {
+  await requireQmd();
+
+  const plan = await getPlanByCapaId(capaId);
+  if (!plan) return { error: "Plan not found." };
+  if (plan.stage !== "observing") {
+    return { error: "This CAPA is not under observation." };
+  }
+
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase
+    .from("capa_plans")
+    .update({
+      stage: "submitted",
+      observation_started_date: "",
+      observation_duration_days: 90,
+      observation_started_by: "",
+    })
+    .eq("id", plan.id)
+    .eq("updated_at", expectedUpdatedAt)
+    .select("updated_at")
+    .maybeSingle();
+  if (error) return { error: error.message };
+  if (!updated) return { conflict: true };
+
+  revalidateObservation(plan);
+  return { ok: true, updatedAt: updated.updated_at as string };
 }

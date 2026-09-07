@@ -57,6 +57,9 @@ type ActionItemRow = {
   order_index: number;
 };
 
+// NB: observation_* columns (migration 0003) are NOT selected here — they are
+// filled in best-effort by enrichObservation() so the app keeps working before
+// the migration is applied.
 export const PLAN_SELECT = `
   id, capa_id, locale_id, month_id, year, month_num, department, date_created,
   source, prepared_by, stage, submitted_date, archived, verification, updated_at,
@@ -148,6 +151,9 @@ export function mapPlan(r: PlanRow): CapaPlan {
     submittedDate: r.submitted_date,
     verification: toVerification(r.verification),
     archived: r.archived,
+    observationStartedDate: "",
+    observationDurationDays: 90,
+    observationStartedBy: "",
     updatedAt: r.updated_at,
     sets: (r.capa_sets ?? [])
       .slice()
@@ -194,6 +200,43 @@ async function enrichStartedDates(
 }
 
 /**
+ * Best-effort: fill in the `capa_plans.observation_*` columns (migration 0003).
+ * Silently no-ops if the columns don't exist yet, so the app keeps working
+ * before the migration is applied.
+ */
+async function enrichObservation(
+  supabase: ServerClient,
+  plans: CapaPlan[],
+): Promise<void> {
+  const ids = plans.map((p) => p.id);
+  if (ids.length === 0) return;
+  const { data, error } = await supabase
+    .from("capa_plans")
+    .select(
+      "id, observation_started_date, observation_duration_days, observation_started_by",
+    )
+    .in("id", ids);
+  if (error || !data) return;
+  const map = new Map(
+    (
+      data as {
+        id: string;
+        observation_started_date: string | null;
+        observation_duration_days: number | null;
+        observation_started_by: string | null;
+      }[]
+    ).map((r) => [r.id, r]),
+  );
+  for (const p of plans) {
+    const row = map.get(p.id);
+    if (!row) continue;
+    p.observationStartedDate = row.observation_started_date ?? "";
+    p.observationDurationDays = row.observation_duration_days ?? 90;
+    p.observationStartedBy = row.observation_started_by ?? "";
+  }
+}
+
+/**
  * Full dataset in the shape the ported components expect ({ locales, months,
  * plans }). RLS scopes rows: a branch account sees only its branch, QMD sees all.
  */
@@ -228,7 +271,10 @@ export async function getScopedData(): Promise<AppData> {
   const plans: CapaPlan[] = ((plansRes.data ?? []) as unknown as PlanRow[]).map(
     mapPlan,
   );
-  await enrichStartedDates(supabase, plans);
+  await Promise.all([
+    enrichStartedDates(supabase, plans),
+    enrichObservation(supabase, plans),
+  ]);
 
   return { locales, months, plans };
 }
@@ -282,6 +328,9 @@ export async function getPlanByCapaId(capaId: string): Promise<CapaPlan | null> 
   if (error) throw error;
   if (!data) return null;
   const plan = mapPlan(data as unknown as PlanRow);
-  await enrichStartedDates(supabase, [plan]);
+  await Promise.all([
+    enrichStartedDates(supabase, [plan]),
+    enrichObservation(supabase, [plan]),
+  ]);
   return plan;
 }

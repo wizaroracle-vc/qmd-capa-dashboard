@@ -30,7 +30,12 @@ import {
   firstIncompleteSet,
   firstIncompleteSetStep,
   firstIncompleteWorkflowStep,
+  fmtDate,
+  isObservationComplete,
   makeSet,
+  observationDaysRemaining,
+  observationEndDate,
+  observationProgressPct,
   renumberSets,
   validateSetStep,
 } from "@/lib/capa-logic";
@@ -445,6 +450,93 @@ export function CapaWorkflowEditor({
             ? "Content read-only (QMD view)"
             : "Locked — awaiting/complete QMD review"}
         </div>
+      )}
+
+      {draft.stage === "submitted" && (
+        <Card
+          style={{
+            padding: 14,
+            marginBottom: 16,
+            background: "#EEF2FF",
+            borderColor: "#A5B4FC",
+          }}
+        >
+          <div style={{ fontSize: 13, color: "#3730A3" }}>
+            <strong>Submitted.</strong> Awaiting QMD to start the observation
+            period. Once started, the monitoring window and remaining time will
+            show here.
+          </div>
+        </Card>
+      )}
+
+      {draft.stage === "observing" && (
+        <Card
+          style={{
+            padding: 16,
+            marginBottom: 16,
+            background: "#F0FDFA",
+            borderColor: "#5EEAD4",
+          }}
+        >
+          {(() => {
+            const done = isObservationComplete(draft);
+            const remaining = observationDaysRemaining(draft);
+            const pct = observationProgressPct(draft);
+            return (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    fontSize: 13,
+                    color: "#0F766E",
+                    fontWeight: 700,
+                  }}
+                >
+                  <span>
+                    {done
+                      ? "Observation period complete — awaiting QMD verification"
+                      : "Under Observation"}
+                  </span>
+                  <span>
+                    {fmtDate(draft.observationStartedDate)} →{" "}
+                    {fmtDate(observationEndDate(draft))}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: 8,
+                    borderRadius: 999,
+                    background: "#CCFBF1",
+                    overflow: "hidden",
+                    margin: "10px 0 6px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${pct}%`,
+                      height: "100%",
+                      background: "#14B8A6",
+                    }}
+                  />
+                </div>
+                <div style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
+                  {done
+                    ? "The monitoring window has ended."
+                    : remaining === null
+                      ? ""
+                      : remaining > 1
+                        ? `${remaining} days left in the observation window.`
+                        : remaining === 1
+                          ? "1 day left in the observation window."
+                          : "Observation window ends today."}
+                </div>
+              </>
+            );
+          })()}
+        </Card>
       )}
 
       {conflict && (
