@@ -13,7 +13,8 @@
     "typegen": "next typegen",
     "db:types": "supabase gen types typescript --local > lib/database.types.ts",
     "db:reset": "supabase db reset",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "wipe": "tsx scripts/wipe.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

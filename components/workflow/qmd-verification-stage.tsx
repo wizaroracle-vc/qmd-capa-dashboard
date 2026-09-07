@@ -66,12 +66,15 @@ export function QmdVerificationStage({
           />
         </div>
         <div style={{ gridColumn: "1 / -1" }}>
-          <FieldLabel>Evidence / Reference</FieldLabel>
+          <FieldLabel hint="Paste a full URL (https://…) — it becomes a clickable link in the report.">
+            Evidence / Reference
+          </FieldLabel>
           <TextArea
             rows={2}
             disabled={locked}
             value={v.evidence}
             onChange={(e) => setField("evidence", e.target.value)}
+            placeholder="Notes and/or a link to supporting evidence…"
           />
         </div>
         <div>

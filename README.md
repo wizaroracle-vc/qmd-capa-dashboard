@@ -44,15 +44,24 @@ Auth is 100% Supabase — no passwords live in this codebase.
 1. Supabase dashboard → **Authentication → Users → Add user**. Give it an email +
    password and tick "Auto Confirm User". This is your QMD login.
 2. Put that email in `.env.local` as `SEED_QMD_EMAIL=…`.
-3. Run the seed — it grants that user the `QMD` role, seeds the branch list, and
-   loads demo CAPA data:
+3. Run the seed — it grants that user the `QMD` role and upserts the branch list.
+   Add `-- --demo` to also load sample CAPA data (skip it for a real setup):
 
    ```bash
-   npm run seed
+   npm run seed              # QMD role + branch list only
+   npm run seed -- --demo    # + sample CAPA data
    ```
 
-To change the QMD password later: Supabase dashboard → Authentication → Users, or
-add a QMD self-service screen later.
+To change the QMD password later: Supabase dashboard → Authentication → Users.
+
+### Wiping data to start fresh
+
+```bash
+npm run wipe -- --yes              # delete ALL CAPAs + months (keeps branches + logins)
+npm run wipe -- --yes --branches   # also delete every branch login + branch
+```
+
+The QMD account is never touched. **Permanent — no backups on the free tier.**
 
 ## 4. Run
 
@@ -69,10 +78,11 @@ Open <http://localhost:3000>.
 
 - Sign in with the QMD username + password (the login screen is just username +
   password — the account itself carries the role and, for branches, the branch).
-- Go to **Branch accounts** (`/qmd/accounts`). **Add a branch** (code + name) —
-  the seed ships a starter list, but QMD can add more here anytime — then create
-  its login (username + password). You can later reveal the password, reset it,
-  disable the account, or remove it.
+- Go to **Branch accounts** (`/qmd/accounts`). **Add a branch** — one field, the
+  branch code (also its name). A login is created automatically: username = the
+  code, password auto-generated (shown in the success message; reveal it again
+  anytime on the branch card). You can reset the password, disable, or remove the
+  login. The seed ships a starter list; QMD adds more here.
 - Sign out, then sign in as a branch with that branch's username/password. It
   lands straight on that branch's dashboard.
 
@@ -112,8 +122,8 @@ where you can run it on demand and view logs.
 ## Status
 
 Working: Supabase auth (branch + QMD), RLS scoping (verified), QMD + branch
-dashboards, QMD branch-account management, create-month / create-CAPA flows, the
-full **workflow editor** (Issue & 6M → Fishbone → 5 Whys → Action Plan) with
+dashboards, QMD branch-account management, auto current-month + create-CAPA flow,
+the full **workflow editor** (Issue & 6M → Fishbone → 5 Whys → Action Plan) with
 optimistic-concurrency save, **QMD verification**, and the printable report route.
 
 Not yet built: the fully charted QMD dashboard (tabs + recharts) — currently a

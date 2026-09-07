@@ -62,7 +62,7 @@ export function CreateCapaButton({
       </Btn>
       {open && (
         <Modal
-          title={`Create CAPA Plan — ${department}`}
+          title={`New CAPA Plan — ${monthLabel}`}
           onClose={() => setOpen(false)}
           width={520}
         >
@@ -70,17 +70,23 @@ export function CreateCapaButton({
             style={{
               marginBottom: 16,
               background: "var(--steel-soft)",
+              border: "1px solid var(--steel)",
               borderRadius: 8,
-              padding: "10px 14px",
+              padding: "12px 14px",
               fontSize: 13,
               color: "var(--navy)",
             }}
           >
-            <span className="mono" style={{ fontWeight: 700 }}>
-              {previewId}
-            </span>{" "}
-            · {localeId} · {monthLabel} · {department}. Created with{" "}
-            <strong>1 default CAPA Set</strong> — add more from the workflow.
+            <div style={{ fontWeight: 700, fontSize: 14 }}>
+              Filing under {monthLabel}
+            </div>
+            <div style={{ marginTop: 3 }}>
+              <span className="mono" style={{ fontWeight: 700 }}>
+                {previewId}
+              </span>{" "}
+              · {localeId} · {department} · starts with{" "}
+              <strong>1 CAPA Set</strong>.
+            </div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div>

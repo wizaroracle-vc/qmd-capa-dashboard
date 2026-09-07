@@ -376,7 +376,7 @@ export function CapaWorkflowEditor({
     <div style={{ maxWidth: 1240, margin: "0 auto", padding: "24px 24px 60px" }}>
       <HeaderTitle
         tag={draft.capaId}
-        meta={`${draft.localeId} · ${monthLabel} · ${draft.department}${
+        meta={`${draft.localeId} · ${draft.department}${
           draft.source ? ` · ${draft.source}` : ""
         }`}
         mono

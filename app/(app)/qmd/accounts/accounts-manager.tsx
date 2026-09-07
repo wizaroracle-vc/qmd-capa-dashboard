@@ -9,12 +9,10 @@ import {
   EyeOff,
   KeyRound,
   Trash2,
-  UserPlus,
 } from "lucide-react";
 import {
   createBranch,
-  createLocaleAccount,
-  removeLocaleAccount,
+  removeBranch,
   resetLocalePassword,
   setLocaleEnabled,
   type AccountsActionState,
@@ -102,7 +100,7 @@ function AddBranchForm() {
           fontSize: 14,
           fontWeight: 700,
           color: "var(--navy-deep)",
-          marginBottom: 10,
+          marginBottom: 4,
           display: "flex",
           alignItems: "center",
           gap: 6,
@@ -110,20 +108,21 @@ function AddBranchForm() {
       >
         <Building2 size={15} /> Add a branch
       </div>
+      <div
+        style={{ fontSize: 12, color: "var(--ink-muted)", marginBottom: 10 }}
+      >
+        Enter the branch code. A login (username = code, auto-generated password)
+        is created automatically.
+      </div>
       <form action={action}>
         <div
           style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}
         >
           <input
-            name="id"
-            placeholder="Code (e.g. VCHI)"
-            maxLength={8}
-            style={{ ...input, flex: "1 1 140px", textTransform: "uppercase" }}
-          />
-          <input
-            name="name"
-            placeholder="Branch name"
-            style={{ ...input, flex: "1 1 200px" }}
+            name="code"
+            placeholder="Branch code (e.g. VCHI)"
+            autoFocus
+            style={{ ...input, flex: "1 1 220px", textTransform: "uppercase" }}
           />
           <button
             type="submit"
@@ -144,40 +143,31 @@ function AddBranchForm() {
   );
 }
 
-function CreateForm({ localeId }: { localeId: string }) {
+/** Legacy/seed branches with no login row — offer only to remove them. */
+function NoLogin({ localeId }: { localeId: string }) {
   const [state, action, pending] = useActionState<AccountsActionState, FormData>(
-    createLocaleAccount,
+    removeBranch,
     {},
   );
   return (
     <form action={action}>
       <input type="hidden" name="localeId" value={localeId} />
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <input
-          name="username"
-          placeholder={`${localeId.toLowerCase()} (username)`}
-          defaultValue={localeId.toLowerCase()}
-          style={{ ...input, flex: "1 1 160px" }}
-        />
-        <input
-          name="password"
-          placeholder="Password"
-          defaultValue={`${localeId}@2026`}
-          style={{ ...input, flex: "1 1 140px" }}
-        />
-        <button
-          type="submit"
-          disabled={pending}
-          style={{
-            ...btn,
-            background: "var(--navy)",
-            color: "#fff",
-            opacity: pending ? 0.6 : 1,
-          }}
-        >
-          <UserPlus size={14} /> {pending ? "Creating…" : "Create account"}
-        </button>
+      <div style={{ fontSize: 13, color: "var(--ink-muted)", marginBottom: 8 }}>
+        No login on record. Remove this branch and add it again to create one.
       </div>
+      <button
+        type="submit"
+        disabled={pending}
+        style={{
+          ...btn,
+          background: "#fff",
+          border: "1px solid var(--red-soft)",
+          color: "var(--red)",
+          opacity: pending ? 0.6 : 1,
+        }}
+      >
+        <Trash2 size={14} /> {pending ? "Removing…" : "Remove branch"}
+      </button>
       <Feedback state={state} />
     </form>
   );
@@ -196,7 +186,7 @@ function ManageForms({ row }: { row: LocaleAccountRow }) {
   const [removeState, removeAction, removing] = useActionState<
     AccountsActionState,
     FormData
-  >(removeLocaleAccount, {});
+  >(removeBranch, {});
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   return (
@@ -286,14 +276,20 @@ function ManageForms({ row }: { row: LocaleAccountRow }) {
         </form>
 
         {confirmRemove ? (
-          <form action={removeAction} style={{ display: "flex", gap: 6 }}>
+          <form
+            action={removeAction}
+            style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}
+          >
             <input type="hidden" name="localeId" value={row.localeId} />
+            <span style={{ fontSize: 12, color: "var(--red)", fontWeight: 600 }}>
+              Deletes {row.localeId}, its login, and ALL its CAPA data. No undo.
+            </span>
             <button
               type="submit"
               disabled={removing}
               style={{ ...btn, background: "var(--red)", color: "#fff" }}
             >
-              <Trash2 size={14} /> {removing ? "Removing…" : "Confirm remove"}
+              <Trash2 size={14} /> {removing ? "Removing…" : "Delete branch"}
             </button>
             <button
               type="button"
@@ -314,7 +310,7 @@ function ManageForms({ row }: { row: LocaleAccountRow }) {
               color: "var(--red)",
             }}
           >
-            <Trash2 size={14} /> Remove
+            <Trash2 size={14} /> Remove branch
           </button>
         )}
       </div>
@@ -348,7 +344,11 @@ export function AccountsManager({ rows }: { rows: LocaleAccountRow[] }) {
           >
             {row.localeId}
           </div>
-          {row.email ? <ManageForms row={row} /> : <CreateForm localeId={row.localeId} />}
+          {row.email ? (
+            <ManageForms row={row} />
+          ) : (
+            <NoLogin localeId={row.localeId} />
+          )}
         </div>
       ))}
     </div>

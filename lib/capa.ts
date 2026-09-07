@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { EMPTY_VERIFICATION, emptySixM } from "@/lib/capa-logic";
+import { EMPTY_VERIFICATION, MONTH_NAMES, emptySixM } from "@/lib/capa-logic";
 import type {
   ActionItem,
   AppData,
@@ -241,6 +241,35 @@ export async function getMonthLabel(monthId: string): Promise<string> {
     .eq("id", monthId)
     .maybeSingle();
   return data?.label ?? "—";
+}
+
+/**
+ * Idempotently make sure the current calendar month exists for this branch.
+ * Called from the branch dashboard so months appear automatically — no manual
+ * "Create Month" step. Safe to call on every load (one indexed SELECT, then an
+ * INSERT only when missing; a 23505 race is ignored).
+ */
+export async function ensureCurrentMonth(localeId: string): Promise<void> {
+  const now = new Date();
+  const year = now.getFullYear();
+  const monthNum = now.getMonth() + 1;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("months")
+    .select("id")
+    .eq("locale_id", localeId)
+    .eq("year", year)
+    .eq("month_num", monthNum)
+    .maybeSingle();
+  if (data) return;
+
+  await supabase.from("months").insert({
+    locale_id: localeId,
+    year,
+    month_num: monthNum,
+    label: `${MONTH_NAMES[monthNum - 1]} ${year}`,
+  });
 }
 
 export async function getPlanByCapaId(capaId: string): Promise<CapaPlan | null> {

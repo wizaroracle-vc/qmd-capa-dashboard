@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { requireLocaleAccess } from "@/lib/auth";
 import { getScopedData } from "@/lib/capa";
-import { DEPARTMENTS, pad } from "@/lib/capa-logic";
+import { departmentsFor, pad } from "@/lib/capa-logic";
 import { HeaderTitle } from "@/components/header-title";
 import { CreateCapaButton } from "./create-capa-button";
 import { PlanCard } from "./plan-card";
@@ -32,6 +32,7 @@ export default async function MonthDashboardPage({
     monthPlans.length + 1,
     3,
   )}`;
+  const departments = departmentsFor(localeId);
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 24px 60px" }}>
@@ -51,26 +52,54 @@ export default async function MonthDashboardPage({
       >
         <ArrowLeft size={14} /> Back to {localeId} Dashboard
       </Link>
-      <HeaderTitle
-        tag="MONTHLY CAPA VIEW"
-        meta={`${localeId} · ${monthRec.label}`}
-      />
+      <HeaderTitle tag="MONTHLY CAPA VIEW" meta={localeId} />
+
+      <div style={{ marginTop: 6 }}>
+        <div
+          style={{
+            fontSize: 11.5,
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "var(--ink-muted)",
+          }}
+        >
+          {localeId} · CAPA plans for
+        </div>
+        <div
+          className="disp"
+          style={{
+            fontSize: 30,
+            fontWeight: 700,
+            color: "var(--navy-deep)",
+            marginTop: 2,
+          }}
+        >
+          {monthRec.label}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--ink-muted)", marginTop: 4 }}>
+          Every CAPA you create below is filed under <strong>{monthRec.label}</strong>.
+        </div>
+      </div>
 
       <div
         style={{
           borderBottom: "1px solid var(--border)",
-          margin: "12px 0 22px",
+          margin: "16px 0 22px",
         }}
       />
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gridTemplateColumns:
+            departments.length === 1
+              ? "1fr"
+              : "repeat(auto-fit, minmax(280px, 1fr))",
           gap: 16,
         }}
       >
-        {DEPARTMENTS.map((dept) => {
+        {departments.map((dept) => {
           const deptPlans = monthPlans.filter((p) => p.department === dept);
           return (
             <div

@@ -12,8 +12,10 @@
    once so it gets role = QMD. Branch logins are created later by QMD at
    /qmd/accounts.
 
-   Safe to re-run. Demo data is skipped if any capa_plans exist; pass
-   `npm run seed -- --force-data` to wipe and reload it.
+   Safe to re-run — by default it only grants the QMD role + upserts the branch
+   list. Demo CAPA data is loaded ONLY with `npm run seed -- --demo`
+   (add `--force-data` to also wipe existing plans/months first).
+   To empty everything, use `npm run wipe -- --yes`.
 --------------------------------------------------------------------------- */
 import { config as loadEnv } from "dotenv";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -28,6 +30,7 @@ const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const QMD_EMAIL = process.env.SEED_QMD_EMAIL?.trim();
 const FORCE_DATA = process.argv.includes("--force-data");
+const WANT_DEMO = process.argv.includes("--demo") || FORCE_DATA;
 
 if (!URL || !SERVICE_ROLE) {
   console.error(
@@ -87,6 +90,11 @@ async function grantQmdRole() {
 }
 
 async function seedDemoData(client: SupabaseClient<Database>) {
+  if (!WANT_DEMO) {
+    console.log("• demo data: skipped (pass --demo to load it)");
+    return;
+  }
+
   const { count, error: countErr } = await client
     .from("capa_plans")
     .select("id", { count: "exact", head: true });

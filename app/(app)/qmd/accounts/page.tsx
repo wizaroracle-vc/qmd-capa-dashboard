@@ -54,9 +54,10 @@ export default async function QmdAccountsPage() {
         Branch Login Accounts
       </div>
       <p style={{ fontSize: 13.5, color: "var(--ink-muted)", margin: "6px 0 22px" }}>
-        Add a branch, then create its one login — reset or reveal the password,
-        disable it, or remove it. Each branch account only sees its own
-        branch&apos;s CAPAs.
+        Adding a branch creates its login automatically (username = the code).
+        Reveal or reset the password, or <strong>Disable</strong> the login for a
+        temporary hold. <strong>Remove branch</strong> permanently deletes the
+        branch and all of its CAPA data. Each branch only sees its own CAPAs.
       </p>
 
       <AccountsManager rows={rows} />

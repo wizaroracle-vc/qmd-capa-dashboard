@@ -24,6 +24,18 @@ export const LOCALES: { id: string; name: string }[] = [
 
 export const DEPARTMENTS = ["Service", "Rooms", "LMT", "FHI"];
 
+/** SSG branches (SSG-QMD, SSG-ITD, …) log a single "Major Findings" bucket. */
+export const SSG_DEPARTMENTS = ["Major Findings"];
+
+export function isSsgLocale(localeId: string): boolean {
+  return localeId.trim().toUpperCase().startsWith("SSG");
+}
+
+/** The CAPA "department" buckets for a branch. */
+export function departmentsFor(localeId: string): string[] {
+  return isSsgLocale(localeId) ? SSG_DEPARTMENTS : DEPARTMENTS;
+}
+
 export const CATEGORIES: Category[] = [
   "MAN",
   "MACHINE",

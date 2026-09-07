@@ -9,6 +9,7 @@ import {
 } from "@/lib/capa-logic";
 import type { CapaPlan, CapaSet, Category } from "@/lib/capa-types";
 import { FishboneStage } from "@/components/workflow/fishbone-stage";
+import { Linkify } from "@/components/linkify";
 import { StatusBadge } from "./status-badge";
 
 /** One 6M category box — label + its causes. */
@@ -363,7 +364,9 @@ export function CapaReport({
                           <td style={{ padding: "7px 9px" }}>{a.responsiblePerson}</td>
                           <td style={{ padding: "7px 9px" }}>{fmtDate(a.startedDate)}</td>
                           <td style={{ padding: "7px 9px" }}>{fmtDate(a.targetDate)}</td>
-                          <td style={{ padding: "7px 9px" }}>{a.verification}</td>
+                          <td style={{ padding: "7px 9px" }}>
+                            <Linkify text={a.verification} />
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -401,10 +404,20 @@ export function CapaReport({
               <strong>Final CAPA Status:</strong> {status}
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
-              <strong>Evidence / Reference:</strong> {plan.verification.evidence || "—"}
+              <strong>Evidence / Reference:</strong>{" "}
+              {plan.verification.evidence ? (
+                <Linkify text={plan.verification.evidence} />
+              ) : (
+                "—"
+              )}
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
-              <strong>Remarks:</strong> {plan.verification.remarks || "—"}
+              <strong>Remarks:</strong>{" "}
+              {plan.verification.remarks ? (
+                <Linkify text={plan.verification.remarks} />
+              ) : (
+                "—"
+              )}
             </div>
           </div>
         ) : (

@@ -151,26 +151,36 @@ export async function deleteCapaPlanAction(
   const user = await requireUser();
   const plan = await getPlanByCapaId(capaId);
   if (!plan) return { error: "Plan not found." };
-  if (user.role === "LOCALE" && plan.localeId !== user.localeId) {
-    return { error: "You can only manage your own branch." };
-  }
 
   const status = planStatus(plan);
-  if (!DELETABLE_STATUSES.has(status)) {
-    return {
-      error: `Only Open or In Progress CAPAs can be deleted (this one is "${status}").`,
-    };
+  const supabase = await createClient(); // RLS: QMD may delete any row.
+
+  if (user.role === "QMD") {
+    // QMD can delete any CAPA at any stage.
+    const { error } = await supabase
+      .from("capa_plans")
+      .delete()
+      .eq("id", plan.id);
+    if (error) return { error: error.message };
+  } else {
+    // Branch users: only their own, only Open / In Progress drafts.
+    if (plan.localeId !== user.localeId) {
+      return { error: "You can only manage your own branch." };
+    }
+    if (!DELETABLE_STATUSES.has(status)) {
+      return {
+        error: `Only Open or In Progress CAPAs can be deleted (this one is "${status}").`,
+      };
+    }
+    const { error } = await supabase
+      .from("capa_plans")
+      .delete()
+      .eq("id", plan.id)
+      .eq("stage", "draft");
+    if (error) return { error: error.message };
   }
 
-  const supabase = await createClient();
   // capa_sets / action_items cascade on the FK.
-  const { error } = await supabase
-    .from("capa_plans")
-    .delete()
-    .eq("id", plan.id)
-    .eq("stage", "draft");
-  if (error) return { error: error.message };
-
   revalidatePath(`/locale/${plan.localeId}`);
   revalidatePath(`/locale/${plan.localeId}/${plan.year}/${plan.monthNum}`);
   revalidatePath("/qmd");

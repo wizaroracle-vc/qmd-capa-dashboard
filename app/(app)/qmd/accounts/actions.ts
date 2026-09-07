@@ -8,14 +8,21 @@ import { createClient } from "@/lib/supabase/server";
 export type AccountsActionState = { error?: string; ok?: string };
 
 const EMAIL_DOMAIN = "capa.local";
-const BRANCH_ID_RE = /^[A-Z0-9]{2,8}$/;
+// Branch code = the branch name. Letters / digits / - / _, 2–40 chars.
+const BRANCH_CODE_RE = /^[A-Z0-9][A-Z0-9_-]{1,39}$/;
 
 function toEmail(username: string) {
   const u = username.trim().toLowerCase();
   return u.includes("@") ? u : `${u}@${EMAIL_DOMAIN}`;
 }
 
-/** Branches now live in the `locales` table (QMD can add them), not a constant. */
+function randomPassword(len = 12) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(len));
+  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+}
+
+/** Branches live in the `locales` table (QMD adds them here). */
 async function localeExists(id: string): Promise<boolean> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -24,29 +31,6 @@ async function localeExists(id: string): Promise<boolean> {
     .eq("id", id)
     .maybeSingle();
   return !!data;
-}
-
-/** QMD adds a new branch. RLS (`locales_qmd_write`) already restricts this to QMD. */
-export async function createBranch(
-  _prev: AccountsActionState,
-  formData: FormData,
-): Promise<AccountsActionState> {
-  await requireQmd();
-  const id = String(formData.get("id") ?? "").trim().toUpperCase();
-  const name = String(formData.get("name") ?? "").trim();
-
-  if (!BRANCH_ID_RE.test(id))
-    return { error: "Branch code must be 2–8 letters or numbers (e.g. VCHI)." };
-  if (!name) return { error: "Enter a branch name." };
-  if (await localeExists(id)) return { error: `Branch ${id} already exists.` };
-
-  const supabase = await createClient();
-  const { error } = await supabase.from("locales").insert({ id, name });
-  if (error) return { error: error.message };
-
-  revalidatePath("/qmd/accounts");
-  revalidatePath("/qmd");
-  return { ok: `Branch ${id} added — now create its login below.` };
 }
 
 async function accountUserId(localeId: string): Promise<string | null> {
@@ -59,22 +43,16 @@ async function accountUserId(localeId: string): Promise<string | null> {
   return data?.user_id ?? null;
 }
 
-export async function createLocaleAccount(
-  _prev: AccountsActionState,
-  formData: FormData,
-): Promise<AccountsActionState> {
-  await requireQmd();
-  const localeId = String(formData.get("localeId") ?? "");
-  const username = String(formData.get("username") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-
-  if (!(await localeExists(localeId))) return { error: "Unknown branch." };
-  if (!username) return { error: "Enter a username." };
-  if (password.length < 6)
-    return { error: "Password must be at least 6 characters." };
-  if (await accountUserId(localeId))
-    return { error: `${localeId} already has an account.` };
-
+/**
+ * Create the auth user + profile + locale_accounts row for a branch.
+ * Assumes the caller has already verified QMD + that the locale exists and has
+ * no account. Returns `{ error }` on failure (nothing partial is left behind).
+ */
+async function provisionLocaleAccount(
+  localeId: string,
+  username: string,
+  password: string,
+): Promise<{ error?: string }> {
   const admin = createAdminClient();
   const email = toEmail(username);
 
@@ -84,7 +62,7 @@ export async function createLocaleAccount(
     email_confirm: true,
   });
   if (createErr || !created.user) {
-    return { error: createErr?.message ?? "Could not create the auth user." };
+    return { error: createErr?.message ?? "Could not create the login." };
   }
 
   const { error: profileErr } = await admin
@@ -107,9 +85,47 @@ export async function createLocaleAccount(
     await admin.auth.admin.deleteUser(created.user.id);
     return { error: acctErr.message };
   }
+  return {};
+}
+
+/**
+ * Add a branch AND its login in one step. The branch code is also the name;
+ * the login username is the code (lower-cased) with an auto-generated password.
+ */
+export async function createBranch(
+  _prev: AccountsActionState,
+  formData: FormData,
+): Promise<AccountsActionState> {
+  await requireQmd();
+  const code = String(formData.get("code") ?? "").trim().toUpperCase();
+
+  if (!BRANCH_CODE_RE.test(code)) {
+    return {
+      error: "Branch code: 2–40 letters, numbers, - or _ (e.g. VCHI).",
+    };
+  }
+  if (await localeExists(code)) return { error: `Branch ${code} already exists.` };
+
+  const supabase = await createClient();
+  const { error: locErr } = await supabase
+    .from("locales")
+    .insert({ id: code, name: code });
+  if (locErr) return { error: locErr.message };
+
+  const username = code.toLowerCase();
+  const password = randomPassword();
+  const { error } = await provisionLocaleAccount(code, username, password);
+  if (error) {
+    // roll back the branch row so it isn't left login-less
+    await supabase.from("locales").delete().eq("id", code);
+    return { error };
+  }
 
   revalidatePath("/qmd/accounts");
-  return { ok: `Created ${localeId} account (${email}).` };
+  revalidatePath("/qmd");
+  return {
+    ok: `Branch ${code} added — login: ${username} / ${password}`,
+  };
 }
 
 export async function resetLocalePassword(
@@ -162,7 +178,12 @@ export async function setLocaleEnabled(
   return { ok: `${localeId} account ${enabled ? "enabled" : "disabled"}.` };
 }
 
-export async function removeLocaleAccount(
+/**
+ * Remove a branch entirely — its login AND the branch itself, which cascades to
+ * every month / CAPA plan / set / action item for that branch (FK
+ * `on delete cascade`). There is no undo; use "Disable" for a temporary hold.
+ */
+export async function removeBranch(
   _prev: AccountsActionState,
   formData: FormData,
 ): Promise<AccountsActionState> {
@@ -170,14 +191,20 @@ export async function removeLocaleAccount(
   const localeId = String(formData.get("localeId") ?? "");
   if (!(await localeExists(localeId))) return { error: "Unknown branch." };
 
-  const userId = await accountUserId(localeId);
-  if (!userId) return { error: `${localeId} has no account.` };
-
   const admin = createAdminClient();
-  // profiles + locale_accounts cascade via FK on auth.users delete.
-  const { error } = await admin.auth.admin.deleteUser(userId);
-  if (error) return { error: error.message };
+
+  // 1. delete the auth user if there is one (cascades profiles + locale_accounts).
+  const userId = await accountUserId(localeId);
+  if (userId) {
+    const { error } = await admin.auth.admin.deleteUser(userId);
+    if (error) return { error: error.message };
+  }
+
+  // 2. delete the branch row (cascades months + capa_plans + sets + items).
+  const { error: locErr } = await admin.from("locales").delete().eq("id", localeId);
+  if (locErr) return { error: locErr.message };
 
   revalidatePath("/qmd/accounts");
-  return { ok: `${localeId} account removed.` };
+  revalidatePath("/qmd");
+  return { ok: `Branch ${localeId} and all of its data were removed.` };
 }

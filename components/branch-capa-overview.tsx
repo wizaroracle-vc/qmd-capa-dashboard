@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { countByStatus, planProgressPct, planStatus } from "@/lib/capa-logic";
 import { StatusBadge, statusCardStyle } from "@/components/status-badge";
 import type { CapaPlan } from "@/lib/capa-types";
@@ -38,6 +38,8 @@ const sectionTitle: React.CSSProperties = {
   margin: "22px 0 10px",
 };
 
+const PAGE_SIZE = 10;
+
 export function BranchCapaOverview({
   plans,
   monthLabels,
@@ -47,7 +49,13 @@ export function BranchCapaOverview({
 }) {
   // "total" = show every CAPA; otherwise a specific status.
   const [filter, setFilter] = useState<string>("total");
+  const [page, setPage] = useState(1);
   const counts = countByStatus(plans);
+
+  const selectFilter = (key: string) => {
+    setFilter(key);
+    setPage(1);
+  };
 
   const rows = plans
     .map((p) => ({ p, status: planStatus(p) }))
@@ -57,6 +65,10 @@ export function BranchCapaOverview({
         (RANK[a.status] ?? 9) - (RANK[b.status] ?? 9) ||
         b.p.dateCreated.localeCompare(a.p.dateCreated),
     );
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount);
+  const pageRows = rows.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
   const activeLabel =
     filter === "total"
@@ -85,7 +97,7 @@ export function BranchCapaOverview({
             <button
               key={key}
               type="button"
-              onClick={() => setFilter(key)}
+              onClick={() => selectFilter(key)}
               style={{
                 font: "inherit",
                 textAlign: "left",
@@ -136,11 +148,22 @@ export function BranchCapaOverview({
           flexWrap: "wrap",
         }}
       >
-        <span>{activeLabel ? `CAPAs — ${activeLabel}` : "All CAPAs"}</span>
+        <span>{activeLabel ? `CAPAs - ${activeLabel}` : "All CAPAs"}</span>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: "var(--ink-faint)",
+            textTransform: "none",
+            letterSpacing: 0,
+          }}
+        >
+          {rows.length}
+        </span>
         {activeLabel && (
           <button
             type="button"
-            onClick={() => setFilter("total")}
+            onClick={() => selectFilter("total")}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -179,7 +202,7 @@ export function BranchCapaOverview({
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {rows.map(({ p, status }) => {
+          {pageRows.map(({ p, status }) => {
             const cs = statusCardStyle(status);
             return (
               <Link
@@ -230,8 +253,55 @@ export function BranchCapaOverview({
               </Link>
             );
           })}
+
+          {pageCount > 1 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 14,
+                marginTop: 6,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setPage((n) => Math.max(1, n - 1))}
+                disabled={current <= 1}
+                style={pagerBtn(current <= 1)}
+              >
+                <ChevronLeft size={14} /> Prev
+              </button>
+              <span style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
+                Page {current} of {pageCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((n) => Math.min(pageCount, n + 1))}
+                disabled={current >= pageCount}
+                style={pagerBtn(current >= pageCount)}
+              >
+                Next <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
+
+const pagerBtn = (disabled: boolean): React.CSSProperties => ({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 4,
+  fontSize: 12.5,
+  fontWeight: 600,
+  padding: "6px 12px",
+  borderRadius: 8,
+  border: "1px solid var(--border)",
+  background: "var(--surface)",
+  color: disabled ? "var(--ink-faint)" : "var(--navy)",
+  cursor: disabled ? "not-allowed" : "pointer",
+  opacity: disabled ? 0.6 : 1,
+});
