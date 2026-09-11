@@ -16,7 +16,10 @@ export default async function CapaReportPage({
   const monthLabel = await getMonthLabel(plan.monthId);
 
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 24px 80px" }}>
+    <div
+      className="report-shell"
+      style={{ maxWidth: 980, margin: "0 auto", padding: "24px 24px 80px" }}
+    >
       <div
         className="no-print"
         style={{

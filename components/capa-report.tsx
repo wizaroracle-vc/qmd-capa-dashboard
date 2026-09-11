@@ -4,6 +4,7 @@ import {
   CATEGORIES,
   CATEGORY_LABELS,
   activeSets,
+  departmentOptionsFor,
   fmtDate,
   observationEndDate,
   planStatus,
@@ -12,6 +13,7 @@ import type { CapaPlan, CapaSet, Category } from "@/lib/capa-types";
 import { FishboneStage } from "@/components/workflow/fishbone-stage";
 import { Linkify } from "@/components/linkify";
 import { StatusBadge } from "./status-badge";
+import { DepartmentSelect } from "./department-select";
 
 /** One 6M category box — label + its causes. */
 function sixMCard(set: CapaSet, c: Category) {
@@ -19,6 +21,7 @@ function sixMCard(set: CapaSet, c: Category) {
   return (
     <div
       key={c}
+      className="report-avoid-break"
       style={{
         border: "1px solid var(--border)",
         borderRadius: 6,
@@ -73,8 +76,9 @@ function Step({
   flush?: boolean;
 }) {
   return (
-    <div style={{ marginBottom: 14, breakInside: "avoid" }}>
+    <div className="report-step" style={{ marginBottom: 14 }}>
       <div
+        className="report-step-head"
         style={{
           display: "flex",
           alignItems: "center",
@@ -117,12 +121,25 @@ function Step({
 export function CapaReport({
   plan,
   monthLabel,
+  onDepartmentChange,
 }: {
   plan: CapaPlan;
   monthLabel: string;
+  /** When provided, the Department field renders as an editable dropdown
+   *  (Summary stage, pre-submission) instead of plain text. */
+  onDepartmentChange?: (department: string) => void;
 }) {
   const sets = activeSets(plan);
   const status = planStatus(plan);
+  const departmentValue = onDepartmentChange ? (
+    <DepartmentSelect
+      value={plan.department}
+      options={departmentOptionsFor(plan.localeId)}
+      onChange={onDepartmentChange}
+    />
+  ) : (
+    plan.department
+  );
 
   return (
     <div
@@ -135,6 +152,7 @@ export function CapaReport({
       }}
     >
       <div
+        className="report-avoid-break"
         style={{
           textAlign: "center",
           marginBottom: 24,
@@ -149,7 +167,7 @@ export function CapaReport({
         <div style={{ fontSize: 13.5, color: "var(--ink-muted)" }}>
           {plan.localeId} · {monthLabel} · {plan.department}
         </div>
-        <div style={{ marginTop: 8 }}>
+        <div className="report-badge" style={{ marginTop: 8 }}>
           <StatusBadge status={status} />
         </div>
       </div>
@@ -166,11 +184,11 @@ export function CapaReport({
         {[
           ["Locale", plan.localeId],
           ["Month", monthLabel],
-          ["Department", plan.department],
+          ["Department", departmentValue],
           ["Date Created", fmtDate(plan.dateCreated)],
           ["Source of Finding", plan.source || "—"],
           ["Prepared By", plan.preparedBy || "—"],
-          ["Submitted Date", fmtDate(plan.submittedDate)],
+          ["Submitted Date", fmtDate(plan.submittedDate), true],
           [
             "Observation",
             plan.observationStartedDate
@@ -178,11 +196,12 @@ export function CapaReport({
                   observationEndDate(plan),
                 )} (${plan.observationDurationDays ?? 90} days)`
               : "—",
+            true,
           ],
-          ["Status", status],
-          ["No. of CAPA Sets", String(sets.length)],
-        ].map(([k, v]) => (
-          <div key={k}>
+          ["Status", status, true],
+          ["No. of CAPA Sets", String(sets.length), true],
+        ].map(([k, v, hideInClean]) => (
+          <div key={k as string} className={hideInClean ? "report-meta" : undefined}>
             <div
               style={{
                 color: "var(--ink-faint)",
@@ -200,6 +219,7 @@ export function CapaReport({
       {sets.map((s) => (
         <div
           key={s.id}
+          className="report-set"
           style={{
             marginBottom: 28,
             border: "1px solid var(--border)",
@@ -208,6 +228,7 @@ export function CapaReport({
           }}
         >
           <div
+            className="report-set-head"
             style={{
               background: "var(--navy)",
               color: "#fff",
@@ -285,9 +306,11 @@ export function CapaReport({
               </div>
             </Step>
 
-            <Step n={4} title="Fishbone Diagram" flush>
-              <FishboneStage set={s} hideHeader fit />
-            </Step>
+            <div className="fishbone-page">
+              <Step n={4} title="Fishbone Diagram" flush>
+                <FishboneStage set={s} hideHeader fit />
+              </Step>
+            </div>
 
             <Step n={5} title="5 Whys Analysis">
               <div style={{ fontSize: 14 }}>
@@ -330,12 +353,21 @@ export function CapaReport({
                   <table
                     style={{
                       width: "100%",
+                      tableLayout: "fixed",
                       borderCollapse: "collapse",
                       fontSize: 12.5,
-                      minWidth: 680,
                       border: "1px solid var(--border)",
                     }}
                   >
+                    <colgroup>
+                      <col style={{ width: "18%" }} />
+                      <col style={{ width: "18%" }} />
+                      <col style={{ width: "11%" }} />
+                      <col style={{ width: "8%" }} />
+                      <col style={{ width: "8%" }} />
+                      <col style={{ width: "13%" }} />
+                      <col style={{ width: "24%" }} />
+                    </colgroup>
                     <thead>
                       <tr style={{ background: "var(--surface-alt)" }}>
                         {[
@@ -344,6 +376,7 @@ export function CapaReport({
                           "Responsible",
                           "Started",
                           "Expected",
+                          "Status",
                           "Verification",
                         ].map((h) => (
                           <th
@@ -352,6 +385,7 @@ export function CapaReport({
                               padding: "7px 9px",
                               textAlign: "left",
                               borderBottom: "1px solid var(--border)",
+                              wordBreak: "break-word",
                             }}
                           >
                             {h}
@@ -363,17 +397,36 @@ export function CapaReport({
                       {s.actionItems.map((a, i) => (
                         <tr
                           key={a.id}
+                          className="report-avoid-break"
                           style={{
                             borderTop: "1px solid var(--border)",
                             background: i % 2 ? "var(--surface-alt)" : "#fff",
                           }}
                         >
-                          <td style={{ padding: "7px 9px" }}>{a.correctiveAction}</td>
-                          <td style={{ padding: "7px 9px" }}>{a.preventiveAction}</td>
-                          <td style={{ padding: "7px 9px" }}>{a.responsiblePerson}</td>
+                          <td style={{ padding: "7px 9px", wordBreak: "break-word" }}>
+                            {a.correctiveAction}
+                          </td>
+                          <td style={{ padding: "7px 9px", wordBreak: "break-word" }}>
+                            {a.preventiveAction}
+                          </td>
+                          <td style={{ padding: "7px 9px", wordBreak: "break-word" }}>
+                            {a.responsiblePerson}
+                          </td>
                           <td style={{ padding: "7px 9px" }}>{fmtDate(a.startedDate)}</td>
                           <td style={{ padding: "7px 9px" }}>{fmtDate(a.targetDate)}</td>
                           <td style={{ padding: "7px 9px" }}>
+                            {a.status === "Completed" ? (
+                              <span style={{ color: "var(--green)", fontWeight: 700 }}>
+                                ✓ Completed
+                                {a.dateCompleted
+                                  ? ` · ${fmtDate(a.dateCompleted)}`
+                                  : ""}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td style={{ padding: "7px 9px", wordBreak: "break-word" }}>
                             <Linkify text={a.verification} />
                           </td>
                         </tr>
@@ -387,7 +440,10 @@ export function CapaReport({
         </div>
       ))}
 
-      <div style={{ borderTop: "2px solid var(--navy)", paddingTop: 18, marginTop: 10 }}>
+      <div
+        className="report-avoid-break report-qmd"
+        style={{ borderTop: "2px solid var(--navy)", paddingTop: 18, marginTop: 10 }}
+      >
         <div className="disp" style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
           QMD Verification
         </div>

@@ -1,9 +1,9 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { AlertCircle, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Check, Plus, Trash2 } from "lucide-react";
 import { AutoTextArea, Btn, Card, FieldLabel, TextInput } from "@/components/ui";
-import { missingActionItemFields, uid } from "@/lib/capa-logic";
+import { missingActionItemFields, todayStr, uid } from "@/lib/capa-logic";
 import type { ActionItem, CapaSet } from "@/lib/capa-types";
 
 function Req() {
@@ -29,6 +29,14 @@ function ActionItemCard({
 }) {
   const missing = missingActionItemFields(item);
   const incomplete = missing.length > 0;
+  const done = item.status === "Completed";
+
+  const toggleDone = () =>
+    onUpdate(
+      done
+        ? { status: "Not Started", dateCompleted: "" }
+        : { status: "Completed", dateCompleted: item.dateCompleted || todayStr() },
+    );
 
   // Always return a borderColor (never undefined) so React isn't toggling the
   // property on/off between renders.
@@ -54,8 +62,57 @@ function ActionItemCard({
           gap: 10,
         }}
       >
-        <div className="disp" style={{ fontWeight: 700, fontSize: 13.5 }}>
-          Action Item #{index + 1}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <div className="disp" style={{ fontWeight: 700, fontSize: 13.5 }}>
+            Action Item #{index + 1}
+          </div>
+          {readOnly ? (
+            done && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  background: "var(--green-soft)",
+                  color: "var(--green)",
+                  border: "1px solid var(--green)",
+                  borderRadius: 999,
+                  padding: "2px 9px",
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                }}
+              >
+                <Check size={12} /> Done
+              </span>
+            )
+          ) : (
+            <button
+              type="button"
+              onClick={toggleDone}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                background: done ? "var(--green-soft)" : "#fff",
+                color: done ? "var(--green)" : "var(--ink-muted)",
+                border: `1px solid ${done ? "var(--green)" : "var(--border)"}`,
+                borderRadius: 999,
+                padding: "3px 10px",
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              <Check size={12} /> {done ? "Done" : "Mark as done"}
+            </button>
+          )}
         </div>
         {!readOnly && (
           <button
@@ -113,7 +170,9 @@ function ActionItemCard({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
+          gridTemplateColumns: done
+            ? "repeat(auto-fit, minmax(160px, 1fr))"
+            : "1fr 1fr 1fr",
           gap: 12,
           marginBottom: 12,
         }}
@@ -156,6 +215,17 @@ function ActionItemCard({
             style={invalid(!item.targetDate)}
           />
         </div>
+        {done && (
+          <div>
+            <FieldLabel>Completed Date</FieldLabel>
+            <TextInput
+              type="date"
+              disabled={readOnly}
+              value={item.dateCompleted}
+              onChange={(e) => onUpdate({ dateCompleted: e.target.value })}
+            />
+          </div>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

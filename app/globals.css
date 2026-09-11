@@ -146,11 +146,23 @@ body {
   border-right: 2px solid var(--navy);
 }
 
+/* Clean Export: strip status/metadata/QMD chrome, keep only the CAPA sets + steps. */
+.clean-export .report-badge,
+.clean-export .report-meta,
+.clean-export .report-qmd {
+  display: none !important;
+}
+
 @media print {
-  /* Landscape gives the fishbone diagram + wide tables room to print uncut. */
+  /* The report body is a text document — portrait uses the page width best.
+     The wide fishbone diagram gets its own landscape page (see below). */
   @page {
+    size: A4 portrait;
+    margin: 14mm;
+  }
+  @page fishbone-landscape {
     size: A4 landscape;
-    margin: 12mm;
+    margin: 10mm;
   }
   .no-print {
     display: none !important;
@@ -158,14 +170,51 @@ body {
   .capa-root {
     background: #fff !important;
   }
-  .print-page {
-    box-shadow: none !important;
+  /* Let the report fill the printable width instead of the on-screen 980px. */
+  .report-shell {
+    max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
   }
-  /* Overrides the inline screen zoom so the diagram fits the printed page. */
+  .print-page {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  /* A set card can span several pages — don't clip it, and drop the heavy
+     frame so a page break doesn't leave a dangling border. */
+  .report-set {
+    border: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    margin-bottom: 10px !important;
+  }
+  .report-set-head {
+    break-inside: avoid;
+    break-after: avoid;
+  }
+  /* Keep a step's header with the start of its body; allow the body itself to
+     flow across a page boundary rather than shunting the whole block down. */
+  .report-step {
+    break-inside: auto;
+  }
+  .report-step-head {
+    break-inside: avoid;
+    break-after: avoid;
+  }
+  .report-avoid-break {
+    break-inside: avoid;
+  }
+  /* Wide diagram → its own landscape page. */
+  .fishbone-page {
+    page: fishbone-landscape;
+    break-before: page;
+    break-after: page;
+  }
   .fishbone-fit {
-    zoom: 0.76 !important;
+    zoom: 0.82 !important;
   }
   body {
     -webkit-print-color-adjust: exact;

@@ -36,6 +36,15 @@ export function departmentsFor(localeId: string): string[] {
   return isSsgLocale(localeId) ? SSG_DEPARTMENTS : DEPARTMENTS;
 }
 
+/**
+ * Department dropdown options for the Summary stage, plus "Under Observation" —
+ * a manual flag a preparer can put on a plan there, separate from the
+ * QMD-triggered observation stage.
+ */
+export function departmentOptionsFor(localeId: string): string[] {
+  return [...departmentsFor(localeId), "Under Observation"];
+}
+
 export const CATEGORIES: Category[] = [
   "MAN",
   "MACHINE",

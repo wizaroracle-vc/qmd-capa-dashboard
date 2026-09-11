@@ -6,9 +6,11 @@ import type { CapaPlan } from "@/lib/capa-types";
 export function SummaryStage({
   plan,
   monthLabel,
+  onDepartmentChange,
 }: {
   plan: CapaPlan;
   monthLabel: string;
+  onDepartmentChange?: (department: string) => void;
 }) {
   return (
     <div>
@@ -27,7 +29,11 @@ export function SummaryStage({
         below, then use <strong>Submit for QMD Verification</strong> at the bottom.
       </div>
 
-      <CapaReport plan={plan} monthLabel={monthLabel} />
+      <CapaReport
+        plan={plan}
+        monthLabel={monthLabel}
+        onDepartmentChange={onDepartmentChange}
+      />
     </div>
   );
 }

@@ -617,7 +617,15 @@ export function CapaWorkflowEditor({
               <FileText size={15} /> View CAPA Report
             </Btn>
           </div>
-          <SummaryStage plan={draft} monthLabel={monthLabel} />
+          <SummaryStage
+            plan={draft}
+            monthLabel={monthLabel}
+            onDepartmentChange={
+              editable
+                ? (department) => setDraft((d) => ({ ...d, department }))
+                : undefined
+            }
+          />
           {isQmd && (
             <div style={{ marginTop: 20 }}>
               <QmdVerificationStage

@@ -74,13 +74,14 @@ function BoneList({
 }
 
 const W = 1160;
-const H = 620;
-const spineY = 250;
+const H = 620; // minimum canvas height
 const spineX1 = 70;
 const spineX2 = 760;
 const cx = 900;
-const cy = 250;
 const r = 100;
+const TOP_Y = 6; // top row starts here
+const ROW_GAP = 46; // vertical gap between a category row and the spine
+const MIN_ROW_H = 120;
 // evenly spread so the wrapped BoneLists (width 200) never touch
 const topAttach: [number, Category][] = [
   [200, "MAN"],
@@ -124,26 +125,40 @@ export function FishboneStage({
     return () => ro.disconnect();
   }, [fit]);
 
-  // The bone lists are absolutely positioned, so tall categories overflow the
-  // fixed-height canvas and collide with whatever follows (the vital-causes
-  // box). Measure the real content height and grow the canvas to fit.
-  const diagRef = useRef<HTMLDivElement>(null);
-  const [diagH, setDiagH] = useState(H);
+  // The bone lists are absolutely positioned, so a category with many causes
+  // used to overflow the fixed canvas and collide with the opposite row. Measure
+  // each column and lay the two rows + spine out dynamically so any number of
+  // entries fits without overlap.
+  const topWrapRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const botWrapRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [topHeights, setTopHeights] = useState<number[]>([MIN_ROW_H, MIN_ROW_H, MIN_ROW_H]);
+  const [botHeights, setBotHeights] = useState<number[]>([MIN_ROW_H, MIN_ROW_H, MIN_ROW_H]);
   useEffect(() => {
-    const el = diagRef.current;
-    if (!el) return;
-    const measure = () =>
-      setDiagH((prev) => Math.max(H, el.scrollHeight, prev));
+    const measure = () => {
+      setTopHeights(topWrapRefs.current.map((el) => el?.offsetHeight ?? MIN_ROW_H));
+      setBotHeights(botWrapRefs.current.map((el) => el?.offsetHeight ?? MIN_ROW_H));
+    };
     measure();
     const raf = requestAnimationFrame(measure);
     const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    el.querySelectorAll(":scope > div").forEach((c) => ro.observe(c));
+    [...topWrapRefs.current, ...botWrapRefs.current].forEach(
+      (el) => el && ro.observe(el),
+    );
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
   }, [set]);
+
+  const topRowH = Math.max(MIN_ROW_H, ...topHeights);
+  const botRowH = Math.max(MIN_ROW_H, ...botHeights);
+  // Natural height for the measured content; if it's shorter than the minimum
+  // canvas, spread the slack so the spine + issue circle stay vertically centred.
+  const naturalH = TOP_Y + topRowH + ROW_GAP + ROW_GAP + botRowH + 16;
+  const diagH = Math.max(H, naturalH);
+  const spineY = TOP_Y + topRowH + ROW_GAP + Math.max(0, (diagH - naturalH) / 2);
+  const cy = spineY;
+  const botY = spineY + ROW_GAP;
 
   return (
     <Card style={{ padding: 20 }}>
@@ -171,7 +186,6 @@ export function FishboneStage({
           }
         >
           <div
-            ref={diagRef}
             style={{
               position: "relative",
               width: W,
@@ -181,15 +195,31 @@ export function FishboneStage({
           >
           <svg
             width={W}
-            height={H}
+            height={diagH}
             style={{ position: "absolute", top: 0, left: 0, zIndex: 0 }}
           >
             <line x1={spineX1} y1={spineY} x2={spineX2} y2={spineY} stroke="#B9C6D2" strokeWidth="2.5" />
             {topAttach.map(([x], i) => (
-              <line key={"t" + i} x1={x} y1={80} x2={x + 90} y2={spineY} stroke="#CBD6DF" strokeWidth="2" />
+              <line
+                key={"t" + i}
+                x1={x}
+                y1={TOP_Y + (topHeights[i] || topRowH)}
+                x2={x + 90}
+                y2={spineY}
+                stroke="#CBD6DF"
+                strokeWidth="2"
+              />
             ))}
             {botAttach.map(([x], i) => (
-              <line key={"b" + i} x1={x} y1={H - 130} x2={x + 90} y2={spineY} stroke="#CBD6DF" strokeWidth="2" />
+              <line
+                key={"b" + i}
+                x1={x}
+                y1={botY}
+                x2={x + 90}
+                y2={spineY}
+                stroke="#CBD6DF"
+                strokeWidth="2"
+              />
             ))}
             <circle cx={cx} cy={cy} r={r} fill="#FBE7EB" stroke="var(--rose)" strokeWidth="2.5" />
             <foreignObject x={cx - 88} y={cy - 78} width={176} height={156}>
@@ -244,8 +274,14 @@ export function FishboneStage({
             </foreignObject>
           </svg>
 
-          {topAttach.map(([x, cat]) => (
-            <div key={cat} style={{ position: "absolute", left: x - 90, top: 6, zIndex: 1 }}>
+          {topAttach.map(([x, cat], i) => (
+            <div
+              key={cat}
+              ref={(el) => {
+                topWrapRefs.current[i] = el;
+              }}
+              style={{ position: "absolute", left: x - 90, top: TOP_Y, zIndex: 1 }}
+            >
               <BoneList
                 title={CATEGORY_LABELS[cat]}
                 causes={set.sixM[cat]}
@@ -253,10 +289,13 @@ export function FishboneStage({
               />
             </div>
           ))}
-          {botAttach.map(([x, cat]) => (
+          {botAttach.map(([x, cat], i) => (
             <div
               key={cat}
-              style={{ position: "absolute", left: x - 90, top: H - 120, zIndex: 1 }}
+              ref={(el) => {
+                botWrapRefs.current[i] = el;
+              }}
+              style={{ position: "absolute", left: x - 90, top: botY, zIndex: 1 }}
             >
               <BoneList
                 title={CATEGORY_LABELS[cat]}
